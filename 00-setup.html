@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>はじめる準備</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+.code.out .code-h{background:var(--surface)}
+.code.out pre{background:var(--bg)}
+.demo{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.demo-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub)}
+.demo-page{background:#fff;color:#000;font-family:"Times New Roman",Times,"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.35;padding:6px 18px 18px;letter-spacing:0}
+.demo-page h1{font-size:2em;font-weight:bold;margin:.5em 0;line-height:1.2}
+.demo-page p{margin:1em 0;max-width:none}
+.demo-page ul{margin:1em 0;padding-left:40px}
+.demo-page a{color:#0000EE;text-decoration:underline}
+.demo-page button{font:13px system-ui,sans-serif;padding:1px 8px;border:1px solid #767676;border-radius:3px;background:#efefef;color:#000;cursor:pointer;margin-left:6px}
+.demo-page.styled{font-family:var(--font);background:#fff;padding:22px 28px 26px}
+.demo-page.styled h1{color:#2453d4;font-size:1.6em}
+.demo-page.styled p,.demo-page.styled li{color:#333;line-height:1.8}
+.demo-page.styled a{color:#2453d4}
+.demo-page.styled button{padding:8px 18px;border:0;border-radius:6px;background:#2453d4;color:#fff;font-weight:500;font-size:14px}
+.tabs{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tablist{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg)}
+.tablist button{font:inherit;font-size:.84rem;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--sub);cursor:pointer;white-space:nowrap}
+.tablist button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tabs [role=tabpanel] .code{border:0;border-radius:0}
+.tabs .run{font-size:.8rem;color:var(--sub);padding:8px 16px;border-top:1px solid var(--border)}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.7}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン">
+      <a href="index.html">研究の流れ</a>
+      <a href="#top" aria-current="page">00 準備</a>
+      <a href="01-web.html">01 Webのしくみ</a>
+      <a href="02-git.html">02 Git と GitHub</a>
+      <a href="03-python.html">03 Python で Web</a>
+      <a href="04-research-system.html">04 データ収集システム</a>
+      <a href="05-report.html">05 レポートの書き方</a>
+    </nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このレッスンの進み具合</span><b class="pcount">0 / 11</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">00 はじめる準備</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">道具をそろえる</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>使う道具</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>VS Code</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>Python</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>Git</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>GitHub アカウント</a></li><li class="nav-h">ターミナル</li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>ターミナルとは</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>フォルダとパス</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>基本のコマンド</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>便利ワザ</a></li><li class="nav-h">困ったとき</li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>よくあるつまずき</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">演</span>準備の確認</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第0回</span><span>はじめる準備</span></p>
+    <h1>はじめる準備：道具をそろえて、ターミナルに慣れる</h1>
+    <p class="desc">第1回〜第3回で使うソフトをインストールし、文字で PC に命令する「ターミナル」の基本を身につけます。ここでつまずかなければ、あとのレッスンはずっと楽になります。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約60分（インストールの時間を含む）</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>なし</dd></div></dl>
+
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 11</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">道具をそろえる</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>使う道具</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>VS Code</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>Python</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>Git</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>GitHub アカウント</a></li><li class="nav-h">ターミナル</li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>ターミナルとは</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>フォルダとパス</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>基本のコマンド</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>便利ワザ</a></li><li class="nav-h">困ったとき</li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>よくあるつまずき</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">演</span>準備の確認</a></li></ul></details>
+
+    <section class="goals" aria-labelledby="goals-h">
+      <h2 id="goals-h">このレッスンで学ぶこと</h2>
+      <ul>
+        <li>VS Code・Python・Git をインストールし、GitHub アカウントを作れる</li>
+        <li>ターミナルで、いまいる場所を確かめて移動できる</li>
+        <li>コマンドでフォルダやファイルを作成・移動・削除できる</li>
+        <li>エラーが出たときに、原因を探したり質問したりできる</li>
+      </ul>
+    </section>
+
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>これから使う道具は、次のような関係になっています。書く、命令する、動かす・記録する、共有する、の順番です。</p>
+      <div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 170" role="img" aria-label="このシリーズで使う道具の関係">
+<g class="s fc"><rect x="6" y="40" width="76" height="62" rx="8"/><rect x="98" y="40" width="76" height="62" rx="8"/><rect x="190" y="40" width="76" height="62" rx="8"/></g>
+<rect class="s fs" x="282" y="40" width="72" height="62" rx="10"/>
+<g class="s sp" style="stroke-width:3"><rect x="6" y="40" width="76" height="62" rx="8" data-s="1"/><rect x="98" y="40" width="76" height="62" rx="8" data-s="2"/><rect x="190" y="40" width="76" height="62" rx="8" data-s="3"/><rect x="282" y="40" width="72" height="62" rx="10" data-s="4"/></g>
+<g class="s"><path d="M84 71H94" marker-end="url(#ar)"/><path d="M176 71H186" marker-end="url(#ar)"/><path d="M268 71H278" marker-end="url(#ar)"/></g>
+<text class="t tb" x="44" y="68" text-anchor="middle">VS Code</text><text class="tm" x="44" y="88" text-anchor="middle">書く</text>
+<text class="t tb" x="136" y="68" text-anchor="middle">ターミナル</text><text class="tm" x="136" y="88" text-anchor="middle">命令する</text>
+<text class="t tb" x="228" y="62" text-anchor="middle" style="font-size:13px">Python</text><text class="t tb" x="228" y="80" text-anchor="middle" style="font-size:13px">Git</text><text class="tm" x="228" y="96" text-anchor="middle">動かす・記録</text>
+<text class="t tb" x="318" y="68" text-anchor="middle">GitHub</text><text class="tm" x="318" y="88" text-anchor="middle">共有する</text>
+<text class="tm" x="136" y="22" text-anchor="middle">あなたの PC</text><path class="s sl dash" d="M6 30H266"/>
+<text class="tm" x="318" y="22" text-anchor="middle">Web</text>
+<text class="t tp tb mono" x="180" y="134" text-anchor="middle" data-s="1">hello.py を書く</text>
+<text class="t tp tb mono" x="180" y="134" text-anchor="middle" data-s="2">$ python3 hello.py</text>
+<text class="t tp tb mono" x="180" y="134" text-anchor="middle" data-s="3">Hello! ／ git commit</text>
+<text class="t tp tb mono" x="180" y="134" text-anchor="middle" data-s="4">git push → github.com</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">道具の関係</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>VS Code（エディター）でプログラムを書く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>ターミナルに命令（コマンド）を打つ</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>Python がプログラムを動かし、Git が変更を記録する</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>GitHub に送って、仲間と共有する</span></button></li></ol>
+</div>
+    </section>
+
+    <div class="part" id="part-1"><p>Part 1</p><h2>道具をそろえる</h2><p class="part-d">第1回〜第3回で使うソフトとアカウントを準備します。授業の前に済ませておきましょう。</p></div>
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 10</span></p>
+  <h2 id="h-1">このシリーズで使う道具</h2>
+  
+<p>プログラミングを始めるには、いくつかの道具が必要です。どれも無料で使えます。</p>
+<div class="tbl stack"><table><thead><tr><th>道具</th><th>役割</th><th>使うレッスン</th></tr></thead><tbody><tr><td data-label="道具">VS Code</td><td data-label="役割">プログラムやファイルを書くエディター</td><td data-label="使うレッスン">全部</td></tr><tr><td data-label="道具">ターミナル</td><td data-label="役割">文字で PC に命令する画面（最初から入っている）</td><td data-label="使うレッスン">全部</td></tr><tr><td data-label="道具">Python</td><td data-label="役割">プログラミング言語と、それを動かすソフト</td><td data-label="使うレッスン">第3回</td></tr><tr><td data-label="道具">Git</td><td data-label="役割">変更を記録するバージョン管理ツール</td><td data-label="使うレッスン">第2回・第3回</td></tr><tr><td data-label="道具">GitHub アカウント</td><td data-label="役割">記録を共有・公開する Web サービスのアカウント</td><td data-label="使うレッスン">第2回・第3回</td></tr><tr><td data-label="道具">Google Chrome</td><td data-label="役割">開発者ツールで通信を観察するブラウザ</td><td data-label="使うレッスン">第1回</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>この資料は、Windows 10・11 と Mac を想定しています。OS によって手順が違うところは、両方を書いています。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>インストールは時間がかかることがあります。授業の当日ではなく、事前に済ませておくのがおすすめです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：VS Code を入れる</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 10</span></p>
+  <h2 id="h-2">VS Code を入れる</h2>
+  
+<p><dfn>VS Code</dfn>（Visual Studio Code）は、Microsoft が作っている無料のエディターです。プログラムを書く、ファイルを整理する、ターミナルを開く、Git を操作する、がすべて1つの画面でできます。</p>
+<ol class="list">
+  <li>公式サイト（code.visualstudio.com）からダウンロードして、インストールする</li>
+  <li>起動したら、左の「拡張機能」アイコンから <strong>Japanese Language Pack</strong> を入れて、日本語表示にする</li>
+  <li>同じく拡張機能の <strong>Python</strong>（Microsoft 製）を入れる</li>
+</ol>
+<div class="tbl stack"><table><thead><tr><th>よく使う操作</th><th>Windows</th><th>Mac</th></tr></thead><tbody><tr><td data-label="よく使う操作">フォルダを開く</td><td data-label="Windows">ファイル → フォルダーを開く</td><td data-label="Mac">ファイル → 開く</td></tr><tr><td data-label="よく使う操作">ターミナルを開く</td><td data-label="Windows"><kbd>Ctrl</kbd> + <kbd>`</kbd>（日本語キーボードは <kbd>Ctrl</kbd> + <kbd>@</kbd>）</td><td data-label="Mac"><kbd>Ctrl</kbd> + <kbd>`</kbd>（日本語キーボードは <kbd>Ctrl</kbd> + <kbd>@</kbd>）</td></tr><tr><td data-label="よく使う操作">保存する</td><td data-label="Windows"><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td data-label="Mac"><kbd>⌘</kbd> + <kbd>S</kbd></td></tr><tr><td data-label="よく使う操作">コマンドパレット（なんでも検索）</td><td data-label="Windows"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></td><td data-label="Mac"><kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>VS Code は「フォルダを開いて」使うのが基本です。ファイルを1つずつ開くより、プロジェクトのフォルダごと開くと、左側に中身が一覧で表示されて便利です。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Mac でターミナルから <code>code .</code> と打って VS Code を開けるようにするには、コマンドパレットで「Shell Command: Install 'code' command in PATH」を実行します。Windows はインストール時に自動で設定されます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：Python を入れる</a></div>
+</section>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 10</span></p>
+  <h2 id="h-3">Python を入れる</h2>
+  
+<p>Python の公式サイト（python.org）の「Downloads」から、最新版をダウンロードしてインストールします。</p>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p><strong>Windows の場合</strong>：インストール画面の最初にある「<strong>Add python.exe to PATH</strong>」に必ずチェックを入れてください。忘れると、ターミナルで <code>python</code> と打っても動きません。</p></div></aside>
+<p>インストールできたら、ターミナルで確かめます。</p>
+<div class="code"><div class="code-h"><span>Mac</span></div><pre><code><span class="cm">$</span> python3 --version
+Python 3.13.0</code></pre></div>
+<div class="code"><div class="code-h"><span>Windows</span></div><pre><code><span class="cm">$</span> python --version
+Python 3.13.0</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Mac では <code>python3</code>、Windows では <code>python</code>（または <code>py</code>）と打つのが一般的です。数字は入れた時期によって変わります。3 から始まっていれば大丈夫です。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：Git を入れる</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 10</span></p>
+  <h2 id="h-4">Git を入れる</h2>
+  
+<p>Git は、第2回で使うバージョン管理ツールです。</p>
+<div class="tbl"><table><thead><tr><th>OS</th><th>入れ方</th></tr></thead><tbody><tr><td>Windows</td><td>公式サイト（git-scm.com）から「Git for Windows」をダウンロードしてインストールする。設定はすべて最初の選択のままで大丈夫</td></tr><tr><td>Mac</td><td>ターミナルで <code>git --version</code> と打つ。入っていなければインストールの案内が出るので、それに従う</td></tr></tbody></table></div>
+<div class="code"><div class="code-h"><span>確認</span></div><pre><code><span class="cm">$</span> git --version
+git version 2.47.0</code></pre></div>
+<p>最後に、記録に残る名前とメールアドレスを設定します。メールアドレスは、次の Step で GitHub に登録するものと同じにしておきます。</p>
+<div class="code"><div class="code-h"><span>最初に一度だけ</span><button class="copy" type="button" data-copy="git config --global user.name &quot;あなたの名前&quot;
+git config --global user.email &quot;you@example.com&quot;
+git config --global init.defaultBranch main">コピー</button></div><pre><code>git config --global user.name "あなたの名前"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main</code></pre></div>
+<p>3行目は、最初に作られる「枝」の名前を <code>main</code> にする設定です。GitHub の標準に合わせておくと、第2回で push するときにつまずきません。</p>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Git for Windows には「Git Bash」というターミナルも入っています。Mac と同じコマンドが使えるので、Windows の人はこちらを使ってもかまいません。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：GitHub のアカウントを作る</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 10</span></p>
+  <h2 id="h-5">GitHub のアカウントを作る</h2>
+  
+<p>GitHub の公式サイト（github.com）の「Sign up」から、メールアドレスで登録します。</p>
+<ol class="list">
+  <li>メールアドレス・パスワード・<strong>ユーザー名</strong>を決めて登録する</li>
+  <li>届いたメールの確認コードを入力する</li>
+  <li>案内に従って<strong>二段階認証</strong>を設定する（スマホの認証アプリなど）</li>
+</ol>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>ユーザー名は、公開ページの URL（<code>https://ユーザー名.github.io/</code>）にもなり、世界中から見えます。本名でなくてかまいません。あとから変えることもできますが、URL も変わるので、最初によく考えて決めましょう。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>学生は「GitHub Education」に申し込むと、有料の機能や開発ツールを無料で使えるようになります。学生証などで認証が必要です。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：ターミナルとは</a></div>
+</section><div class="part" id="part-2"><p>Part 2</p><h2>ターミナルの基本</h2><p class="part-d">文字で PC に命令する「ターミナル」の使い方を覚えます。</p></div>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 10</span></p>
+  <h2 id="h-6">ターミナルとは</h2>
+  
+<p>ふだん私たちは、マウスでアイコンをクリックして PC を操作しています（<dfn>GUI</dfn>）。<dfn>ターミナル</dfn>は、それを<strong>文字の命令（コマンド）</strong>で行う画面です（<dfn>CLI</dfn>）。</p>
+<div class="tbl stack"><table><thead><tr><th></th><th>GUI（マウス）</th><th>CLI（ターミナル）</th></tr></thead><tbody><tr><td data-label="">操作</td><td data-label="GUI（マウス）">アイコンをクリック</td><td data-label="CLI（ターミナル）">コマンドを打って Enter</td></tr><tr><td data-label="">得意なこと</td><td data-label="GUI（マウス）">見ながら直感的に操作</td><td data-label="CLI（ターミナル）">同じ作業のくり返し、細かい指定、自動化</td></tr><tr><td data-label="">プログラミングでは</td><td data-label="GUI（マウス）">ファイルを開く・見る</td><td data-label="CLI（ターミナル）">プログラムを動かす、Git を使う、ライブラリを入れる</td></tr></tbody></table></div>
+<p>ターミナルの開き方です。迷ったら、VS Code の中のターミナル（メニューの「表示 → ターミナル」）を使えば、OS の違いを気にせずにすみます。</p>
+<div class="tbl"><table><thead><tr><th>OS</th><th>アプリ</th></tr></thead><tbody><tr><td>Mac</td><td>「ターミナル」（アプリケーション → ユーティリティ）</td></tr><tr><td>Windows</td><td>「ターミナル」または「PowerShell」。Git を入れた人は「Git Bash」も使える</td></tr></tbody></table></div>
+<div class="code"><div class="code-h"><span>ターミナルを開いたところ（Mac の例）</span></div><pre><code>hanako@MacBook ~ %</code></pre></div>
+<p>最後の <code>%</code>（Windows では <code>&gt;</code>、Git Bash では <code>$</code>）は<dfn>プロンプト</dfn>といって、「命令を待っています」という合図です。この資料では、入力する行の先頭に <code>$</code> を付けて表しています。<code>$</code> そのものは打ちません。</p>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>GUI がレストランのメニューの写真を指さして注文すること、CLI が店員さんに言葉で注文することです。慣れると、言葉のほうが細かく、速く伝えられます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：場所の考え方：フォルダとパス</a></div>
+</section>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 10</span></p>
+  <h2 id="h-7">場所の考え方：フォルダとパス</h2>
+  
+<p>ターミナルで一番大事なのは、<strong>「いま、どのフォルダにいるか」</strong>を意識することです。ターミナルは常にどこか1つのフォルダの中にいて、そこを<dfn>カレントディレクトリ</dfn>（現在地）といいます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 256" role="img" aria-label="cdコマンドでフォルダを移動するアニメーション">
+<rect class="s fc" x="14" y="10" width="92" height="20" rx="4"/><text class="t" x="22" y="25" style="font-size:12px">~（ホーム）</text><rect class="s fc" x="48" y="35" width="92" height="20" rx="4"/><text class="t" x="56" y="50" style="font-size:12px">Desktop</text><path class="s sl thin" d="M28 45H48"/><rect class="s fc" x="48" y="60" width="92" height="20" rx="4"/><text class="t" x="56" y="75" style="font-size:12px">Documents</text><path class="s sl thin" d="M28 70H48"/><rect class="s fc" x="82" y="85" width="92" height="20" rx="4"/><text class="t" x="90" y="100" style="font-size:12px">presemi</text><path class="s sl thin" d="M62 95H82"/><rect class="s fc" x="116" y="110" width="92" height="20" rx="4"/><text class="t" x="124" y="125" style="font-size:12px">web</text><path class="s sl thin" d="M96 120H116"/><rect class="s fc" x="116" y="135" width="92" height="20" rx="4"/><text class="t" x="124" y="150" style="font-size:12px">python</text><path class="s sl thin" d="M96 145H116"/><rect class="s fc" x="48" y="160" width="92" height="20" rx="4"/><text class="t" x="56" y="175" style="font-size:12px">Downloads</text><path class="s sl thin" d="M28 170H48"/><path class="s sl thin" d="M28 30V195M62 80V130M96 105V155"/>
+<rect class="s sp" x="80" y="107" width="98" height="51" rx="6" style="stroke-width:2.6" data-s="4"/>
+<g data-at="1:112,13|2:146,63|3:180,88|4:180,88|5:214,138|6:180,88|7:112,13"><path class="fp" d="M0 7l10-7v14z"/><text class="t tp tb" x="14" y="12" style="font-size:12px">いまここ</text></g>
+<rect x="6" y="200" width="348" height="52" rx="8" style="fill:#1B1E25"/>
+<g data-s="1"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ pwd</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">/Users/hanako</text></g><g data-s="2"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ cd Documents</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">Documents の中に入る</text></g><g data-s="3"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ cd presemi</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">presemi の中に入る</text></g><g data-s="4"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ ls</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">python  web</text></g><g data-s="5"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ cd python</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">python の中に入る</text></g><g data-s="6"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ cd ..</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">.. は「1つ上」。presemi に戻る</text></g><g data-s="7"><text class="t mono tb" x="18" y="222" style="font-size:12.5px;fill:var(--signal)">$ cd ~</text><text class="t mono" x="18" y="242" style="font-size:12px;fill:#E8EAEE">~ でどこからでもホームに戻れる</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 7</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">フォルダの移動</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>ターミナルを開くと、最初はホーム（~）にいる。pwd でいまの場所を確認</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>$ cd Documents：Documents の中に入る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>$ cd presemi：presemi の中に入る</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>$ ls：python  web</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>$ cd python：python の中に入る</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>$ cd ..：.. は「1つ上」。presemi に戻る</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>$ cd ~：~ でどこからでもホームに戻れる</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th>用語</th><th>意味</th><th>例</th></tr></thead><tbody><tr><td data-label="用語">ディレクトリ</td><td data-label="意味">フォルダのこと</td><td data-label="例">Documents</td></tr><tr><td data-label="用語">パス</td><td data-label="意味">フォルダやファイルの場所を表す住所</td><td data-label="例">/Users/hanako/Documents/presemi</td></tr><tr><td data-label="用語">ホーム（~）</td><td data-label="意味">自分専用のフォルダ。ターミナルを開いたときの場所</td><td data-label="例">Mac: /Users/hanako、Windows: C:\Users\hanako</td></tr><tr><td data-label="用語">..</td><td data-label="意味">1つ上のフォルダ</td><td data-label="例">cd .. で戻る</td></tr><tr><td data-label="用語">.</td><td data-label="意味">いまいるフォルダ</td><td data-label="例">code . で、いまの場所を VS Code で開く</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Mac のパスは <code>/</code> で、Windows のパスは <code>\</code> で区切ります。PowerShell では <code>/</code> も使えます。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>迷子になったら <code>pwd</code> でいまの場所を、<code>ls</code> で周りを確認しましょう。地図アプリの「現在地」ボタンと同じです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：基本のコマンド</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 10</span></p>
+  <h2 id="h-8">基本のコマンド</h2>
+  
+<p>まずはこの表のコマンドだけで十分です。打ったコマンドの結果がどう反映されるか、アニメーションで確かめましょう。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 230" role="img" aria-label="コマンドでフォルダとファイルを作り、動かし、消すアニメーション">
+<rect class="s fc" x="200" y="10" width="154" height="176" rx="8"/><text class="tm tb" x="212" y="30">presemi フォルダの中</text>
+<g data-s="1"><text class="tm" x="212" y="58">（からっぽ）</text></g>
+<g data-s="2-6"><rect class="s fs" x="212" y="44" width="58" height="22" rx="4"/><text class="t" x="220" y="60" style="font-size:12px">web/</text></g>
+<g data-s="3-6"><rect class="s fs" x="278" y="44" width="66" height="22" rx="4"/><text class="t" x="284" y="60" style="font-size:12px">python/</text></g>
+<g data-at="3:212,80|4:212,80|5:226,108" data-s="3-5"><use href="#i-file" width="18" height="23"/><text class="t mono" x="24" y="16" style="font-size:12px">memo.txt</text></g>
+<text class="tm" x="226" y="104" data-s="5-6">web の中：</text>
+<g data-s="4"><rect class="s sp" x="208" y="76" width="96" height="30" rx="5" style="stroke-width:2.4"/></g>
+<text class="tm tp tb" x="226" y="128" data-s="6">memo.txt を削除した</text>
+<rect x="6" y="10" width="184" height="176" rx="8" style="fill:#1B1E25"/>
+<text class="tm" x="16" y="30" style="fill:#9AA1AD">ターミナル</text>
+<g style="font-family:var(--mono);font-size:11.5px">
+<text x="16" y="56" style="fill:var(--signal)" data-s="1-6">$ mkdir presemi</text>
+<text x="16" y="74" style="fill:var(--signal)" data-s="1-6">$ cd presemi</text>
+<text x="16" y="92" style="fill:var(--signal)" data-s="2-6">$ mkdir web</text>
+<text x="16" y="110" style="fill:var(--signal)" data-s="3-6">$ mkdir python</text>
+<text x="16" y="128" style="fill:var(--signal)" data-s="3-6">$ touch memo.txt</text>
+<text x="16" y="146" style="fill:var(--signal)" data-s="4-6">$ ls</text>
+<text x="28" y="160" style="fill:#E8EAEE;font-size:10.5px" data-s="4">memo.txt python web</text>
+<text x="16" y="160" style="fill:var(--signal)" data-s="5-6">$ mv memo.txt web/</text>
+<text x="16" y="176" style="fill:var(--signal)" data-s="6">$ rm web/memo.txt</text>
+</g>
+<text class="tm" x="180" y="214" text-anchor="middle">左で打ったコマンドの結果が、右のフォルダに反映される</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 6</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">ファイルの操作</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>mkdir でフォルダを作り、cd でその中に入る</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>mkdir web で、中にフォルダを作る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>python フォルダと、空のファイル memo.txt も作る</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>ls で中身を一覧表示する</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>mv で memo.txt を web フォルダへ移動する</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>rm で削除する。ゴミ箱には入らないので注意</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th>コマンド</th><th>意味</th><th>例</th></tr></thead><tbody><tr><td data-label="コマンド"><code>pwd</code></td><td data-label="意味">いまの場所を表示</td><td data-label="例"><code>pwd</code></td></tr><tr><td data-label="コマンド"><code>ls</code></td><td data-label="意味">中身を一覧表示</td><td data-label="例"><code>ls</code></td></tr><tr><td data-label="コマンド"><code>cd</code></td><td data-label="意味">場所を移動</td><td data-label="例"><code>cd presemi</code></td></tr><tr><td data-label="コマンド"><code>mkdir</code></td><td data-label="意味">フォルダを作る</td><td data-label="例"><code>mkdir web</code></td></tr><tr><td data-label="コマンド"><code>touch</code></td><td data-label="意味">空のファイルを作る</td><td data-label="例"><code>touch memo.txt</code></td></tr><tr><td data-label="コマンド"><code>cp</code></td><td data-label="意味">コピー</td><td data-label="例"><code>cp memo.txt copy.txt</code></td></tr><tr><td data-label="コマンド"><code>mv</code></td><td data-label="意味">移動・名前の変更</td><td data-label="例"><code>mv memo.txt web/</code></td></tr><tr><td data-label="コマンド"><code>rm</code></td><td data-label="意味">削除</td><td data-label="例"><code>rm memo.txt</code></td></tr><tr><td data-label="コマンド"><code>cat</code></td><td data-label="意味">ファイルの中身を表示</td><td data-label="例"><code>cat memo.txt</code></td></tr><tr><td data-label="コマンド"><code>clear</code></td><td data-label="意味">画面をきれいにする</td><td data-label="例"><code>clear</code></td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Windows の PowerShell でも、ほとんどのコマンドはそのまま使えます。<code>touch</code> だけは使えないので、代わりに <code>New-Item memo.txt</code> と打ちます。Git Bash ならすべて同じです。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p><code>rm</code> で消したファイルは<strong>ゴミ箱に入らず、すぐに消えます</strong>。フォルダごと消す <code>rm -r</code> は特に慎重に。打つ前に、<code>pwd</code> と <code>ls</code> で場所と中身を確かめましょう。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">いまいるフォルダの「1つ上」に戻るコマンドは？</p><div class="opts"><button class="opt" type="button">cd ~</button><button class="opt" type="button">cd ..</button><button class="opt" type="button">cd .</button></div><p class="fb">.. は1つ上、~ はホーム、. はいまの場所です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：覚えておくと楽になるワザ</a></div>
+</section>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 10</span></p>
+  <h2 id="h-9">覚えておくと楽になるワザ</h2>
+  
+<p>ターミナルの操作がぐっと楽になるワザです。最初から使うクセをつけましょう。</p>
+<div class="tbl stack"><table><thead><tr><th>ワザ</th><th>操作</th><th>効果</th></tr></thead><tbody><tr><td data-label="ワザ">補完</td><td data-label="操作"><kbd>Tab</kbd></td><td data-label="効果">ファイル名の途中まで打って押すと、残りを自動で入力してくれる。打ち間違いも防げる</td></tr><tr><td data-label="ワザ">履歴</td><td data-label="操作"><kbd>↑</kbd> <kbd>↓</kbd></td><td data-label="効果">前に打ったコマンドを呼び出す</td></tr><tr><td data-label="ワザ">止める</td><td data-label="操作"><kbd>Ctrl</kbd> + <kbd>C</kbd></td><td data-label="効果">動きっぱなしのプログラム（Flask のサーバーなど）を止める</td></tr><tr><td data-label="ワザ">場所をドラッグ</td><td data-label="操作">フォルダをターミナルにドラッグ</td><td data-label="効果">そのフォルダのパスが入力される</td></tr><tr><td data-label="ワザ">VS Code で開く</td><td data-label="操作"><code>code .</code></td><td data-label="効果">いまいるフォルダを VS Code で開く</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>フォルダやファイルの名前には、<strong>半角の英数字</strong>を使いましょう。日本語やスペースが入っていると、コマンドで扱うときにエラーの原因になります。「プレゼミ 資料」ではなく「presemi」のように。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>ターミナルで <kbd>Ctrl</kbd> + <kbd>C</kbd> はコピーではなく「止める」です。コピーしたいときは、Mac では <kbd>⌘</kbd> + <kbd>C</kbd>、Windows のターミナルでは文字を選んで <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> を使います。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：よくあるつまずきと直し方</a></div>
+</section><div class="part" id="part-3"><p>Part 3</p><h2>困ったときは</h2><p class="part-d">エラーが出ても慌てないための、よくある原因と直し方です。</p></div>
+<section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Step 10<span>/ 10</span></p>
+  <h2 id="h-10">よくあるつまずきと直し方</h2>
+  
+<p>エラーは失敗ではなく、「ここがおかしいよ」という PC からのメッセージです。よくあるものと、直し方をまとめました。</p>
+<div class="tbl stack"><table><thead><tr><th>表示されたメッセージ（例）</th><th>よくある原因</th><th>直し方</th></tr></thead><tbody><tr><td data-label="表示されたメッセージ（例）"><code>command not found: python3</code><br><code>用語 'python' は…認識されません</code></td><td data-label="よくある原因">インストールされていない、または PATH が通っていない</td><td data-label="直し方">もう一度インストールする（Windows は PATH のチェックを忘れずに）。そのあとターミナルを開き直す</td></tr><tr><td data-label="表示されたメッセージ（例）"><code>python</code> と打つと Microsoft Store が開く</td><td data-label="よくある原因">Windows の「アプリ実行エイリアス」が働いている</td><td data-label="直し方">python.org から入れたうえで、設定の「アプリ実行エイリアス」で Python をオフにする</td></tr><tr><td data-label="表示されたメッセージ（例）"><code>No such file or directory</code></td><td data-label="よくある原因">いる場所が違う、名前の打ち間違い</td><td data-label="直し方"><code>pwd</code> と <code>ls</code> で場所と名前を確かめる。<kbd>Tab</kbd> 補完を使う</td></tr><tr><td data-label="表示されたメッセージ（例）"><code>pip: command not found</code></td><td data-label="よくある原因">pip のコマンドが見つからない</td><td data-label="直し方"><code>python3 -m pip install ...</code> のように Python 経由で使う</td></tr><tr><td data-label="表示されたメッセージ（例）"><code>Permission denied</code></td><td data-label="よくある原因">そのファイルを触る権限がない</td><td data-label="直し方">自分のホームの中で作業しているか確かめる。わからなければ先輩・先生に相談</td></tr><tr><td data-label="表示されたメッセージ（例）">何も起きない・戻ってこない</td><td data-label="よくある原因">プログラムが動き続けている</td><td data-label="直し方"><kbd>Ctrl</kbd> + <kbd>C</kbd> で止める</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>質問のしかた</p><div><p>エラーを人や AI に相談するときは、<strong>①何をしようとしたか ②打ったコマンド ③表示されたエラーの全文</strong>をセットで伝えると、すぐに原因が見つかります。エラーは画像ではなく、文字のままコピーして貼りましょう。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>ネットや AI が教えてくれたコマンドでも、<code>sudo</code> や <code>rm -rf</code> が入っているものは、意味がわかるまで実行しないでください。PC の大事なファイルを消してしまうことがあります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="11" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：準備ができたか確かめる</h2>
+  <p>4つとも終われば、第1回〜第3回をスムーズに進められます。</p>
+
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">演習 1</span><h3>道具がそろっているか確かめる</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>3つの道具のバージョンが表示される</dd></div><div><dt>使うもの</dt><dd>ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 2〜4</dd></div></dl>
+    <div class="code"><div class="code-h"><span>ターミナルで1行ずつ実行</span><button class="copy" type="button" data-copy="python3 --version
+git --version
+code --version">コピー</button></div><pre><code>python3 --version
+git --version
+code --version</code></pre></div>
+    <p>3つとも数字が表示されれば成功です。エラーが出たら、Step 10 の表を見てみましょう（Windows は <code>python3</code> を <code>python</code> に変えて試します）。</p>
+  </div>
+
+  <div class="exercise" id="ex-2">
+    <div class="ex-h"><span class="ex-tag">演習 2</span><h3>作業用のフォルダを作る</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>このシリーズで使うフォルダをコマンドで作り、VS Code で開く</dd></div><div><dt>使うもの</dt><dd>ターミナル、VS Code</dd></div><div><dt>関係する段階</dt><dd>Step 7・8</dd></div></dl>
+    <div class="code"><div class="code-h"><span>ターミナル</span><button class="copy" type="button" data-copy="cd ~
+mkdir presemi
+cd presemi
+mkdir web
+mkdir git
+mkdir python
+ls
+code .">コピー</button></div><pre><code>cd ~
+mkdir presemi
+cd presemi
+mkdir web
+mkdir git
+mkdir python
+ls
+code .</code></pre></div>
+    <p>VS Code の左側に、web・git・python の3つのフォルダが並んでいれば成功です。第1回〜第4回で作るものは、すべてこの <code>presemi</code> の中に置きます。</p>
+  </div>
+
+  <div class="exercise" id="ex-3">
+    <div class="ex-h"><span class="ex-tag">演習 3</span><h3>ファイルを作って、動かして、消す</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>マウスを使わずにファイルを操作する</dd></div><div><dt>使うもの</dt><dd>ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 8・9</dd></div></dl>
+    <ol class="steps">
+      <li>presemi の中で、<code>memo.txt</code> を作る（PowerShell は <code>New-Item memo.txt</code>）</li>
+      <li>VS Code で開いて1行書いて保存し、<code>cat memo.txt</code> で中身を表示する</li>
+      <li><code>mv</code> で web フォルダへ移動し、<code>ls web</code> で確かめる</li>
+      <li><code>rm</code> で削除する。<kbd>Tab</kbd> 補完を使ってみよう</li>
+    </ol>
+    <details><summary>答えの例</summary><div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code>touch memo.txt
+cat memo.txt
+mv memo.txt web/
+ls web
+rm web/memo.txt</code></pre></div></details>
+  </div>
+
+  <div class="exercise" id="ex-4">
+    <div class="ex-h"><span class="ex-tag">演習 4</span><h3>GitHub の準備を終わらせる</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>GitHub にログインでき、Git に名前とメールが設定されている</dd></div><div><dt>使うもの</dt><dd>ブラウザ、ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 4・5</dd></div></dl>
+    <ol class="steps">
+      <li>GitHub にログインし、二段階認証が設定されていることを確かめる</li>
+      <li>プロフィールにアイコンや自己紹介を設定する（任意）</li>
+      <li>ターミナルで <code>git config --global --list</code> を実行し、名前とメールが表示されることを確かめる</li>
+    </ol>
+  </div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：準備チェックリストと用語</h2>
+  <div class="tbl"><table><thead><tr><th>チェック項目</th><th>確かめ方</th></tr></thead><tbody><tr><td>VS Code が日本語で使える</td><td>起動してメニューが日本語</td></tr><tr><td>Python が動く</td><td><code>python3 --version</code>（Windows は <code>python</code>）</td></tr><tr><td>Git が動き、名前とメールを設定した</td><td><code>git config --global --list</code></td></tr><tr><td>GitHub にログインできる</td><td>二段階認証も設定済み</td></tr><tr><td>presemi フォルダがある</td><td><code>ls ~/presemi</code></td></tr><tr><td>Google Chrome が入っている</td><td>第1回の開発者ツールで使う</td></tr></tbody></table></div>
+  <div class="tbl stack"><table><thead><tr><th>用語</th><th>ひとことで</th><th>段階</th></tr></thead><tbody><tr><td data-label="用語">エディター</td><td data-label="ひとことで">プログラムを書くためのソフト（VS Code）</td><td data-label="段階"><a href="#step-2">2</a></td></tr><tr><td data-label="用語">PATH</td><td data-label="ひとことで">コマンドを探しに行く場所の一覧</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">GUI / CLI</td><td data-label="ひとことで">マウスで操作 / 文字で操作</td><td data-label="段階"><a href="#step-6">6</a></td></tr><tr><td data-label="用語">ターミナル / プロンプト</td><td data-label="ひとことで">文字で命令する画面 / 命令を待つ合図</td><td data-label="段階"><a href="#step-6">6</a></td></tr><tr><td data-label="用語">ディレクトリ / パス</td><td data-label="ひとことで">フォルダ / フォルダやファイルの住所</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">カレントディレクトリ</td><td data-label="ひとことで">いまいるフォルダ</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">~ / .. / .</td><td data-label="ひとことで">ホーム / 1つ上 / いまの場所</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">補完</td><td data-label="ひとことで">Tab で残りを自動入力</td><td data-label="段階"><a href="#step-9">9</a></td></tr></tbody></table></div>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="index.html" style="text-decoration:none;color:var(--text)"><small>前のページ</small>研究の流れ</a>
+    <a class="pg next-l" href="01-web.html"><small>次のレッスン</small>第1回 Webのしくみ</a>
+  </nav>
+</section>
+
+  </article>
+
+  <aside class="toc" aria-label="このページの内容">
+    <p>このページの内容</p>
+    <ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">使う道具</a></li><li><a href="#step-2" data-toc="step-2">VS Code</a></li><li><a href="#step-3" data-toc="step-3">Python</a></li><li><a href="#step-4" data-toc="step-4">Git</a></li><li><a href="#step-5" data-toc="step-5">GitHub アカウント</a></li><li><a href="#step-6" data-toc="step-6">ターミナルとは</a></li><li><a href="#step-7" data-toc="step-7">フォルダとパス</a></li><li><a href="#step-8" data-toc="step-8">基本のコマンド</a></li><li><a href="#step-9" data-toc="step-9">便利ワザ</a></li><li><a href="#step-10" data-toc="step-10">よくあるつまずき</a></li><li><a href="#exercise" data-toc="exercise">演習</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul>
+  </aside>
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-setup-progress",TOTAL=11,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="11"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+
+  /* 表示結果のデモ */
+  document.querySelectorAll(".demo").forEach(function(d){
+    var page=d.querySelector(".demo-page"),t=d.querySelector("[data-css-toggle]"),like=d.querySelector(".like"),n=0;
+    if(t)t.addEventListener("click",function(){var on=page.classList.toggle("styled");t.textContent=on?"CSS を外す":"CSS を当てる";t.setAttribute("aria-pressed",on)});
+    if(like&&page.dataset.js==="on")like.addEventListener("click",function(){n++;like.textContent="いいね "+n});
+    var a=d.querySelector(".demo-page a");if(a)a.addEventListener("click",function(e){e.preventDefault()});
+  });
+  /* 言語タブ */
+  document.querySelectorAll("[data-tabs]").forEach(function(box){
+    var tabs=[].slice.call(box.querySelectorAll("[role=tab]")),panels=[].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function sel(i){tabs.forEach(function(t,k){t.setAttribute("aria-selected",k===i);t.tabIndex=k===i?0:-1});panels.forEach(function(p,k){p.hidden=k!==i})}
+    tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(i)});t.addEventListener("keydown",function(e){if(e.key==="ArrowRight"){sel((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}if(e.key==="ArrowLeft"){var k=(i-1+tabs.length)%tabs.length;sel(k);tabs[k].focus()}})});
+    sel(0);
+  });
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

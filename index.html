@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>研究の流れ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+.code.out .code-h{background:var(--surface)}
+.code.out pre{background:var(--bg)}
+.demo{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.demo-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub)}
+.demo-page{background:#fff;color:#000;font-family:"Times New Roman",Times,"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.35;padding:6px 18px 18px;letter-spacing:0}
+.demo-page h1{font-size:2em;font-weight:bold;margin:.5em 0;line-height:1.2}
+.demo-page p{margin:1em 0;max-width:none}
+.demo-page ul{margin:1em 0;padding-left:40px}
+.demo-page a{color:#0000EE;text-decoration:underline}
+.demo-page button{font:13px system-ui,sans-serif;padding:1px 8px;border:1px solid #767676;border-radius:3px;background:#efefef;color:#000;cursor:pointer;margin-left:6px}
+.demo-page.styled{font-family:var(--font);background:#fff;padding:22px 28px 26px}
+.demo-page.styled h1{color:#2453d4;font-size:1.6em}
+.demo-page.styled p,.demo-page.styled li{color:#333;line-height:1.8}
+.demo-page.styled a{color:#2453d4}
+.demo-page.styled button{padding:8px 18px;border:0;border-radius:6px;background:#2453d4;color:#fff;font-weight:500;font-size:14px}
+.tabs{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tablist{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg)}
+.tablist button{font:inherit;font-size:.84rem;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--sub);cursor:pointer;white-space:nowrap}
+.tablist button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tabs [role=tabpanel] .code{border:0;border-radius:0}
+.tabs .run{font-size:.8rem;color:var(--sub);padding:8px 16px;border-top:1px solid var(--border)}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.7}
+
+.sheet{border:1px solid var(--border);border-radius:10px;padding:4px 0}
+.sheet dl{margin:0} .sheet div{display:grid;grid-template-columns:9em 1fr;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.sheet div:last-child{border-bottom:0} .sheet dt{font-weight:700;font-size:.88rem} .sheet dd{margin:0;font-size:.92rem}
+@media (max-width:560px){.sheet div{grid-template-columns:1fr;gap:2px}}
+.stage-map{display:grid;gap:6px}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン"><a href="#top" aria-current="page">研究の流れ</a><a href="00-setup.html">00 準備</a><a href="01-web.html">01 Webのしくみ</a><a href="02-git.html">02 Git と GitHub</a><a href="03-python.html">03 Python で Web</a><a href="04-research-system.html">04 データ収集システム</a><a href="05-report.html">05 レポートの書き方</a></nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このページの進み具合</span><b class="pcount">0 / 8</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">研究の流れ</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>テーマを決める</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>先行研究を調べる</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>明らかにすることを決める</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>データ収集の準備</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>データを集める</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>分析する</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>考察する</a></li><li class="nav-h">ワーク</li><li><a href="#exercise" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">演</span>ワーク</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>はじめに</span><span>研究の流れ</span></p>
+    <h1>研究の流れ：テーマから考察まで</h1>
+    <p class="desc">研究は「テーマを決める」から「考察する」までの7つの段階を、くり返し回していくものです。まず全体の流れを知り、これから学ぶ技術がどこで役立つのかを確かめましょう。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約30分</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>なし</dd></div></dl>
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 8</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>テーマを決める</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>先行研究を調べる</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>明らかにすることを決める</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>データ収集の準備</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>データを集める</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>分析する</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>考察する</a></li><li class="nav-h">ワーク</li><li><a href="#exercise" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">演</span>ワーク</a></li></ul></details>
+    <section class="goals" aria-labelledby="goals-h"><h2 id="goals-h">このページで学ぶこと</h2><ul><li>研究の7つの段階と、その順番を説明できる</li><li>リサーチクエスチョンと仮説を書ける</li><li>プレゼミの資料が、研究のどの段階で役立つかがわかる</li></ul></section>
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>研究は、次の7つの段階をくり返すサイクルです。「次へ」か「自動再生」で、計算練習アプリを例にした研究の流れを見てみましょう。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 280" role="img" aria-label="研究の7つの段階が循環する図">
+<circle class="s sl" cx="180" cy="142" r="88" style="stroke-width:3"/>
+<path class="s sp" d="M130.2 69.4A88 88 0 0 1 154.3 57.8" marker-end="url(#arp)" style="stroke-width:4" data-s="8"/>
+<circle class="s fc" cx="180.0" cy="54.0" r="20"/><text class="t tb mono" x="180.0" y="59.0" text-anchor="middle">1</text><circle class="s sp fs" cx="180.0" cy="54.0" r="20" style="stroke-width:3" data-s="1"/><text class="t tb mono tp" x="180.0" y="59.0" text-anchor="middle" data-s="1">1</text><text class="t" x="180.0" y="18.0" text-anchor="middle" style="font-size:12.5px">テーマ</text><circle class="s fc" cx="248.8" cy="87.1" r="20"/><text class="t tb mono" x="248.8" y="92.1" text-anchor="middle">2</text><circle class="s sp fs" cx="248.8" cy="87.1" r="20" style="stroke-width:3" data-s="2"/><text class="t tb mono tp" x="248.8" y="92.1" text-anchor="middle" data-s="2">2</text><text class="t" x="274.8" y="92.1" text-anchor="start" style="font-size:12.5px">先行研究</text><circle class="s fc" cx="265.8" cy="161.6" r="20"/><text class="t tb mono" x="265.8" y="166.6" text-anchor="middle">3</text><circle class="s sp fs" cx="265.8" cy="161.6" r="20" style="stroke-width:3" data-s="3"/><text class="t tb mono tp" x="265.8" y="166.6" text-anchor="middle" data-s="3">3</text><text class="t" x="291.8" y="166.6" text-anchor="start" style="font-size:12.5px">問いと仮説</text><circle class="s fc" cx="218.2" cy="221.3" r="20"/><text class="t tb mono" x="218.2" y="226.3" text-anchor="middle">4</text><circle class="s sp fs" cx="218.2" cy="221.3" r="20" style="stroke-width:3" data-s="4"/><text class="t tb mono tp" x="218.2" y="226.3" text-anchor="middle" data-s="4">4</text><text class="t" x="244.2" y="226.3" text-anchor="start" style="font-size:12.5px">収集の準備</text><circle class="s fc" cx="141.8" cy="221.3" r="20"/><text class="t tb mono" x="141.8" y="226.3" text-anchor="middle">5</text><circle class="s sp fs" cx="141.8" cy="221.3" r="20" style="stroke-width:3" data-s="5"/><text class="t tb mono tp" x="141.8" y="226.3" text-anchor="middle" data-s="5">5</text><text class="t" x="115.8" y="226.3" text-anchor="end" style="font-size:12.5px">データ収集</text><circle class="s fc" cx="94.2" cy="161.6" r="20"/><text class="t tb mono" x="94.2" y="166.6" text-anchor="middle">6</text><circle class="s sp fs" cx="94.2" cy="161.6" r="20" style="stroke-width:3" data-s="6"/><text class="t tb mono tp" x="94.2" y="166.6" text-anchor="middle" data-s="6">6</text><text class="t" x="68.2" y="166.6" text-anchor="end" style="font-size:12.5px">分析</text><circle class="s fc" cx="111.2" cy="87.1" r="20"/><text class="t tb mono" x="111.2" y="92.1" text-anchor="middle">7</text><circle class="s sp fs" cx="111.2" cy="87.1" r="20" style="stroke-width:3" data-s="7"/><text class="t tb mono tp" x="111.2" y="92.1" text-anchor="middle" data-s="7">7</text><text class="t" x="85.2" y="92.1" text-anchor="end" style="font-size:12.5px">考察</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="1">テーマを決める</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="2">先行研究を調べる</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="3">明らかにすることを決める</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="4">データ収集の準備</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="5">データを集める</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="6">分析する</text><text class="t tb tp" x="180" y="147" text-anchor="middle" style="font-size:14px" data-s="7">考察する</text><g data-s="8"><text class="t tb tp" x="180" y="138" text-anchor="middle" style="font-size:14px">考察から</text><text class="t tb tp" x="180" y="158" text-anchor="middle" style="font-size:14px">次の問いへ</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 8</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">研究のサイクル</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>テーマを決める　例：計算練習アプリは、計算力を伸ばすのか</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>先行研究を調べる　例：フラッシュ暗算や計算練習の効果を調べた論文を読む</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>明らかにすることを決める　例：「1日5分・2週間の練習で、1問あたりの時間は短くなるか」</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>データ収集の準備　例：記録用の Web システムを作り、同意書を用意する</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>データを集める　例：10人に2週間、毎日記録してもらう</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>分析する　例：1日目と14日目の時間を比べ、グラフにする</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>考察する　例：なぜ短くなったか、人による違いはなぜか、を考える</span></button></li><li><button type="button" data-go="8"><span class="fn">8</span><span>考察から新しい疑問が生まれ、次のテーマにつながる</span></button></li></ol>
+</div>
+<p>このプレゼミの資料（第0回〜第4回）は、主に<strong>4「データ収集の準備」</strong>のためのものです。自分の研究のデータを集めるシステムを、自分で作れるようになることを目指します。</p>
+    </section>
+    
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 7</span></p>
+  <h2 id="h-1">研究テーマを決める</h2>
+  
+<p>研究の出発点は、<strong>自分が「なぜ？」「本当に？」と思ったこと</strong>です。最初は広いテーマで大丈夫です。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>興味のあること、身近な困りごと、授業やニュースで気になったことを書き出し、1つに決める</dd></div><div><dt>自分に問いかける</dt><dd>それは自分が本当に知りたいこと？　データで確かめられそう？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>「計算練習アプリは、本当に計算力を伸ばすのか」</dd></div></dl></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>気になったことをスマホのメモにためておく「疑問ノート」を作っておくと、テーマ探しに困りません。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：先行研究を調べる</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 7</span></p>
+  <h2 id="h-2">先行研究を調べる</h2>
+  
+<p>同じことを調べた人がいないか、どこまでわかっているかを調べます。これを<dfn>先行研究</dfn>といいます。先行研究を知ることで、<strong>まだわかっていない部分</strong>が見え、自分の研究の意味がはっきりします。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>論文データベースで、キーワードを変えながら論文を探し、要点をまとめる</dd></div><div><dt>自分に問いかける</dt><dd>何がもうわかっていて、何がまだわかっていない？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>計算練習、フラッシュ暗算、ワーキングメモリなどで検索し、練習期間や測り方を比べる</dd></div><div><dt>使う資料・道具</dt><dd>CiNii Research、J-STAGE、Google Scholar</dd></div></dl></div>
+<div class="tbl"><table><thead><tr><th>サービス</th><th>特徴</th></tr></thead><tbody><tr><td>CiNii Research</td><td>日本の論文・本・研究データを横断して探せる</td></tr><tr><td>J-STAGE</td><td>日本の学会誌の論文を読める（無料で読めるものが多い）</td></tr><tr><td>Google Scholar</td><td>世界中の論文を探せる。被引用数も見られる</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>論文はまず「タイトル → 要旨（アブストラクト） → 図表 → 結論」の順に読むと、短い時間で要点がつかめます。読んだ論文は、著者・年・タイトル・要点を一覧にしておきましょう。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>生成 AI に論文を聞くと、存在しない論文をそれらしく答えることがあります。引用する論文は、必ず自分でデータベースを検索して、実物を確かめてください。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：明らかにすることを決める</a></div>
+</section>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 7</span></p>
+  <h2 id="h-3">明らかにすることを決める</h2>
+  
+<p>先行研究をふまえて、<strong>この研究で何を明らかにするのか</strong>を1つの問いにします。これを<dfn>リサーチクエスチョン</dfn>（RQ）といいます。あわせて、予想される答え（<dfn>仮説</dfn>）も書きます。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>「何が」「どうなると」「何が変わるか」が入った、データで答えられる問いにする</dd></div><div><dt>自分に問いかける</dt><dd>誰に、何を、どうやって測れば答えが出る？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>RQ：1日5分・2週間の計算練習で、1問あたりの回答時間は短くなるか<br>仮説：短くなる。正答率は下がらない</dd></div></dl></div>
+<div class="tbl"><table><thead><tr><th>よくない問い</th><th>よい問い</th></tr></thead><tbody><tr><td>計算練習は効果があるか（何の効果？どう測る？）</td><td>2週間の練習で、1問あたりの回答時間は短くなるか</td></tr><tr><td>アプリは使いやすいか</td><td>初めて使う人が、説明なしで記録を完了できる割合はどれくらいか</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>問いが決まると、「何を測るか」が決まります。ここで決めた測るものが、次の段階で作るシステムの入力項目になります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：データを集める準備をする</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 7</span></p>
+  <h2 id="h-4">データを集める準備をする</h2>
+  
+<p>問いに答えるためのデータを、<strong>どうやって、誰から、いつ、どれだけ</strong>集めるかを決め、道具を準備します。このプレゼミの資料の大部分は、この段階のためのものです。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>集める方法・対象者・期間・項目を決め、記録システムを作り、同意の手続きを準備する</dd></div><div><dt>自分に問いかける</dt><dd>このデータで本当に問いに答えられる？　参加者に負担や不利益はない？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>参加者10人・14日間。記録用 Web システムを作り、説明書と同意書を用意する</dd></div><div><dt>使う資料・道具</dt><dd><a href="00-setup.html">第0回</a>〜<a href="03-python.html">第3回</a>で道具を学び、<a href="04-research-system.html">第4回</a>でシステムを作る</dd></div></dl></div>
+<div class="tbl"><table><thead><tr><th>集め方</th><th>向いていること</th></tr></thead><tbody><tr><td>アンケート</td><td>考え方・感じ方を、たくさんの人から集める</td></tr><tr><td>実験・テスト</td><td>条件を変えたときの成績や時間の変化を測る</td></tr><tr><td>観察・記録</td><td>ふだんの行動を、そのまま記録する</td></tr><tr><td>インタビュー</td><td>理由や背景を、深く聞く</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>人からデータを集める研究では、大学の<strong>倫理審査</strong>や、参加者への説明と同意が必要になることがあります。必要な手続きは大学によって違うので、計画の段階で指導教員に相談しましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：データを集める</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 7</span></p>
+  <h2 id="h-5">データを集める</h2>
+  
+<p>準備したシステムで、実際にデータを集めます。<strong>本番の前に少人数で試す</strong>（予備調査）と、問題に早く気づけます。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>予備調査で手順を確かめてから本番を始め、毎日記録状況を確認する</dd></div><div><dt>自分に問いかける</dt><dd>記録漏れはない？　データは毎日バックアップできている？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>先輩2人に3日間試してもらい、わかりにくい入力欄を直してから本番開始</dd></div></dl></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>「いつ、何が起きたか」を書く研究ノートをつけましょう。「3日目にサーバーが止まった」「5日目に P03 さんが体調不良で休んだ」などの記録が、考察で役に立ちます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：集めたデータを分析する</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 7</span></p>
+  <h2 id="h-6">集めたデータを分析する</h2>
+  
+<p>集めたデータを整理して、<strong>数字やグラフで傾向をつかみます</strong>。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>データを CSV に書き出し、平均を出したり、グラフにしたり、条件ごとに比べたりする</dd></div><div><dt>自分に問いかける</dt><dd>問いに答えるには、何と何を比べればいい？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>1日目と14日目の1問あたりの時間を人ごとに比べ、日ごとの平均を折れ線グラフにする</dd></div><div><dt>使う資料・道具</dt><dd><a href="04-research-system.html">第4回</a>の Python（pandas・matplotlib）</dd></div></dl></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>分析の方法は、データを集める前に決めておくのが理想です。集めてから都合のよい比べ方を探すと、偶然の結果を「発見」と勘違いしやすくなります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：考察する</a></div>
+</section>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 7</span></p>
+  <h2 id="h-7">考察する</h2>
+  
+<p>分析の結果が<strong>何を意味するのか</strong>を考えます。結果をくり返すだけでなく、「なぜそうなったのか」を、先行研究と比べながら説明します。</p>
+<div class="sheet"><dl><div><dt>やること</dt><dd>仮説と比べる、先行研究と比べる、理由を考える、限界と次の課題を書く</dd></div><div><dt>自分に問いかける</dt><dd>ほかの説明はできない？　この結果はどこまで言える？</dd></div><div><dt>例（計算練習アプリ）</dt><dd>時間は短くなったが、問題に慣れただけかもしれない。人数が少ない。次は問題を毎日変えて確かめたい</dd></div></dl></div>
+<div class="tbl"><table><thead><tr><th>考察に書くこと</th><th>例</th></tr></thead><tbody><tr><td>結果のまとめ</td><td>1問あたりの時間は平均で約30%短くなった</td></tr><tr><td>仮説・先行研究との比較</td><td>仮説どおり。先行研究の○○と同じ傾向</td></tr><tr><td>理由の考察</td><td>くり返しで解き方が自動化した可能性</td></tr><tr><td>研究の限界</td><td>10人と少ない、比較するグループがない</td></tr><tr><td>次の課題</td><td>練習しないグループと比べる</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>考察で出てきた「次の課題」が、次の研究テーマになります。研究は1回で終わりではなく、このサイクルを回し続けることです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：ワーク</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="8" aria-labelledby="h-ex">
+  <p class="step-no">Worksheet</p>
+  <h2 id="h-ex">ワーク：研究計画シートを書く</h2>
+  <p>自分の研究について、次のシートを埋めてみましょう。すべて埋まらなくても大丈夫です。空いたところが、これから調べることです。</p>
+  <div class="code"><div class="code-h"><span>研究計画シート（コピーして使う）</span><button class="copy" type="button" data-copy="# 研究計画シート
+1. テーマ：
+2. 先行研究（著者・年・わかっていること）：
+   -
+   -
+3. まだわかっていないこと：
+4. リサーチクエスチョン：
+5. 仮説：
+6. 集め方（アンケート／実験／観察／インタビュー）：
+7. 対象者と人数：
+8. 期間と回数：
+9. 記録する項目：
+10. 分析の方法（何と何を比べるか）：
+11. 倫理面で気をつけること：">コピー</button></div><pre><code># 研究計画シート
+1. テーマ：
+2. 先行研究（著者・年・わかっていること）：
+   -
+   -
+3. まだわかっていないこと：
+4. リサーチクエスチョン：
+5. 仮説：
+6. 集め方（アンケート／実験／観察／インタビュー）：
+7. 対象者と人数：
+8. 期間と回数：
+9. 記録する項目：
+10. 分析の方法（何と何を比べるか）：
+11. 倫理面で気をつけること：</code></pre></div>
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+    
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：研究の流れと資料の対応</h2>
+  <div class="tbl"><table><thead><tr><th>段階</th><th>この資料で使うところ</th></tr></thead><tbody><tr><td>1〜3 テーマ・先行研究・問い</td><td>このページ、指導教員との相談</td></tr><tr><td>4 データ収集の準備</td><td><a href="00-setup.html">第0回 準備</a>、<a href="01-web.html">第1回 Web</a>、<a href="02-git.html">第2回 Git</a>、<a href="03-python.html">第3回 Python</a>、<a href="04-research-system.html">第4回 データ収集システム</a></td></tr><tr><td>5 データを集める</td><td><a href="04-research-system.html">第4回</a>の運用・バックアップ</td></tr><tr><td>6 分析する</td><td><a href="04-research-system.html">第4回</a>の CSV・pandas・グラフ</td></tr><tr><td>7 考察する</td><td>このページの Step 7</td></tr><tr><td>まとめて報告する</td><td><a href="05-report.html">第5回 レポートの書き方</a></td></tr></tbody></table></div>
+  <nav class="pager" aria-label="レッスンの移動">
+    <span class="pg disabled"><small>前のページ</small>なし</span>
+    <a class="pg next-l" href="00-setup.html" style="text-decoration:none;color:var(--text)"><small>次のレッスン</small>第0回 はじめる準備</a>
+  </nav>
+</section>
+  </article>
+  <aside class="toc" aria-label="このページの内容"><p>このページの内容</p><ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">テーマを決める</a></li><li><a href="#step-2" data-toc="step-2">先行研究を調べる</a></li><li><a href="#step-3" data-toc="step-3">明らかにすることを決める</a></li><li><a href="#step-4" data-toc="step-4">データ収集の準備</a></li><li><a href="#step-5" data-toc="step-5">データを集める</a></li><li><a href="#step-6" data-toc="step-6">分析する</a></li><li><a href="#step-7" data-toc="step-7">考察する</a></li><li><a href="#exercise" data-toc="exercise">ワーク</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul></aside>
+</div>
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-research-progress",TOTAL=8,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="8"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+
+  /* 表示結果のデモ */
+  document.querySelectorAll(".demo").forEach(function(d){
+    var page=d.querySelector(".demo-page"),t=d.querySelector("[data-css-toggle]"),like=d.querySelector(".like"),n=0;
+    if(t)t.addEventListener("click",function(){var on=page.classList.toggle("styled");t.textContent=on?"CSS を外す":"CSS を当てる";t.setAttribute("aria-pressed",on)});
+    if(like&&page.dataset.js==="on")like.addEventListener("click",function(){n++;like.textContent="いいね "+n});
+    var a=d.querySelector(".demo-page a");if(a)a.addEventListener("click",function(e){e.preventDefault()});
+  });
+  /* 言語タブ */
+  document.querySelectorAll("[data-tabs]").forEach(function(box){
+    var tabs=[].slice.call(box.querySelectorAll("[role=tab]")),panels=[].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function sel(i){tabs.forEach(function(t,k){t.setAttribute("aria-selected",k===i);t.tabIndex=k===i?0:-1});panels.forEach(function(p,k){p.hidden=k!==i})}
+    tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(i)});t.addEventListener("keydown",function(e){if(e.key==="ArrowRight"){sel((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}if(e.key==="ArrowLeft"){var k=(i-1+tabs.length)%tabs.length;sel(k);tabs[k].focus()}})});
+    sel(0);
+  });
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

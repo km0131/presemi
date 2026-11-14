@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PythonでWebサイトを作る</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+.code.out .code-h{background:var(--surface)}
+.code.out pre{background:var(--bg)}
+.demo{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.demo-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub)}
+.demo-page{background:#fff;color:#000;font-family:"Times New Roman",Times,"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.35;padding:6px 18px 18px;letter-spacing:0}
+.demo-page h1{font-size:2em;font-weight:bold;margin:.5em 0;line-height:1.2}
+.demo-page p{margin:1em 0;max-width:none}
+.demo-page ul{margin:1em 0;padding-left:40px}
+.demo-page a{color:#0000EE;text-decoration:underline}
+.demo-page button{font:13px system-ui,sans-serif;padding:1px 8px;border:1px solid #767676;border-radius:3px;background:#efefef;color:#000;cursor:pointer;margin-left:6px}
+.demo-page.styled{font-family:var(--font);background:#fff;padding:22px 28px 26px}
+.demo-page.styled h1{color:#2453d4;font-size:1.6em}
+.demo-page.styled p,.demo-page.styled li{color:#333;line-height:1.8}
+.demo-page.styled a{color:#2453d4}
+.demo-page.styled button{padding:8px 18px;border:0;border-radius:6px;background:#2453d4;color:#fff;font-weight:500;font-size:14px}
+.tabs{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tablist{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg)}
+.tablist button{font:inherit;font-size:.84rem;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--sub);cursor:pointer;white-space:nowrap}
+.tablist button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tabs [role=tabpanel] .code{border:0;border-radius:0}
+.tabs .run{font-size:.8rem;color:var(--sub);padding:8px 16px;border-top:1px solid var(--border)}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.7}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン">
+      <a href="index.html">研究の流れ</a>
+      <a href="00-setup.html">00 準備</a>
+      <a href="01-web.html">01 Webのしくみ</a>
+      <a href="02-git.html">02 Git と GitHub</a>
+      <a href="#top" aria-current="page">03 Python で Web</a>
+      <a href="04-research-system.html">04 データ収集システム</a>
+      <a href="05-report.html">05 レポートの書き方</a>
+    </nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このレッスンの進み具合</span><b class="pcount">0 / 16</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">03 Python で Web サイトを作る</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">Python の基本</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>Python とは</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>基本の書き方</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>ライブラリ</a></li><li class="nav-h">フロントエンド</li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>HTML</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>CSS</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>JavaScript</a></li><li class="nav-h">Python で Web</li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>しくみ</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>Flask で最初のページ</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>テンプレート</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>フォーム</a></li><li class="nav-h">データと公開</li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>データベースと SQL</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>SQLite で保存</a></li><li><a href="#step-13" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">13</span>DB サーバーと NoSQL</a></li><li><a href="#step-14" data-nav="14"><span class="mark" aria-hidden="true"></span><span class="n">14</span>公開するには</a></li><li class="nav-h">ほかの言語</li><li><a href="#step-15" data-nav="15"><span class="mark" aria-hidden="true"></span><span class="n">15</span>ほかの言語</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="16"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第3回</span><span>Python で Web サイトを作る</span></p>
+    <h1>Python で Web サイトを作る</h1>
+    <p class="desc">Python の基本の書き方から始めて、ブラウザ側の HTML・CSS・JavaScript を知り、Flask というライブラリで実際にページを返し、データベースに保存するところまで進みます。最後に、ほかの言語ではどう書くのかも見てみます。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約150分（2〜3回に分けるのがおすすめ）</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>第1回・第2回</dd></div></dl>
+
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 16</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">Python の基本</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>Python とは</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>基本の書き方</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>ライブラリ</a></li><li class="nav-h">フロントエンド</li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>HTML</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>CSS</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>JavaScript</a></li><li class="nav-h">Python で Web</li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>しくみ</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>Flask で最初のページ</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>テンプレート</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>フォーム</a></li><li class="nav-h">データと公開</li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>データベースと SQL</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>SQLite で保存</a></li><li><a href="#step-13" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">13</span>DB サーバーと NoSQL</a></li><li><a href="#step-14" data-nav="14"><span class="mark" aria-hidden="true"></span><span class="n">14</span>公開するには</a></li><li class="nav-h">ほかの言語</li><li><a href="#step-15" data-nav="15"><span class="mark" aria-hidden="true"></span><span class="n">15</span>ほかの言語</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="16"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul></details>
+
+    <section class="goals" aria-labelledby="goals-h">
+      <h2 id="goals-h">このレッスンで学ぶこと</h2>
+      <ul>
+        <li>Python の変数・条件分岐・くり返し・関数を読み書きできる</li>
+        <li>ライブラリと pip、仮想環境の役割がわかる</li>
+        <li>HTML・CSS・JavaScript の役割の違いを説明できる</li>
+        <li>Flask でページを返し、フォームの入力を受け取れる</li>
+        <li>SQLite にデータを保存し、データベースの種類の違いがわかる</li>
+        <li>ほかの言語でも同じしくみで作れることがわかる</li>
+      </ul>
+    </section>
+
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>Web サイトには、ブラウザの中で動く<dfn>フロントエンド</dfn>と、サーバーで動く<dfn>バックエンド</dfn>があります。このレッスンでは両方を扱い、バックエンドを Python で作ります。</p>
+      <div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 205" role="img" aria-label="フロントエンドとバックエンドの関係">
+<rect class="s fc" x="6" y="24" width="152" height="146" rx="8"/><path class="s" d="M6 44H158"/><g class="fl"><circle cx="18" cy="34" r="3"/><circle cx="28" cy="34" r="3"/><circle cx="38" cy="34" r="3"/></g>
+<text class="tm" x="82" y="16" text-anchor="middle">ブラウザ（スマホ・PC）</text>
+<g class="s fs"><rect x="24" y="58" width="116" height="26" rx="5"/><rect x="24" y="92" width="116" height="26" rx="5"/><rect x="24" y="126" width="116" height="26" rx="5"/></g>
+<text class="t mono tb" x="82" y="76" text-anchor="middle">HTML</text><text class="t mono tb" x="82" y="110" text-anchor="middle">CSS</text><text class="t mono tb" x="82" y="144" text-anchor="middle">JavaScript</text>
+<rect class="s fc" x="208" y="24" width="146" height="146" rx="8"/><text class="tm" x="281" y="16" text-anchor="middle">サーバー</text>
+<rect class="s fy" x="222" y="46" width="118" height="44" rx="6"/><text class="t mono tb" x="281" y="66" text-anchor="middle">Python</text><text class="tm" x="281" y="82" text-anchor="middle">Flask</text>
+<g class="s"><path d="M244 110v34a37 8 0 0 0 74 0v-34"/><ellipse cx="281" cy="110" rx="37" ry="8" class="fs"/></g><text class="tm" x="281" y="136" text-anchor="middle">データベース</text>
+<text class="t tb" x="82" y="194" text-anchor="middle">フロントエンド</text><text class="t tb" x="281" y="194" text-anchor="middle">バックエンド</text>
+<rect class="s sp" x="2" y="20" width="160" height="154" rx="10" style="stroke-width:3" data-s="1"/>
+<rect class="s sp" x="204" y="20" width="154" height="154" rx="10" style="stroke-width:3" data-s="2"/>
+<g data-s="3-4"><path class="s" d="M162 70H202" marker-end="url(#ar)"/><text class="tm mono" x="182" y="62" text-anchor="middle">GET</text></g>
+<g data-s="4"><path class="s sp" d="M202 126H162" marker-end="url(#arp)" style="stroke-width:2.6"/><text class="tm mono tp tb" x="182" y="146" text-anchor="middle">HTML</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">Web サイトの2つの側</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>フロントエンド：ブラウザの中で動く部分。HTML・CSS・JavaScript で作る</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>バックエンド：サーバーで動く部分。このレッスンでは Python で作る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>ブラウザが「このページをください」とリクエストを送る</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>Python がページを組み立てて、レスポンスとして返す</span></button></li></ol>
+</div>
+      <div class="tbl stack"><table><thead><tr><th>Part</th><th>内容</th><th>作るもの</th></tr></thead><tbody><tr><td data-label="Part">1</td><td data-label="内容">Python の基本</td><td data-label="作るもの">計算や表示をするプログラム</td></tr><tr><td data-label="Part">2</td><td data-label="内容">HTML・CSS・JavaScript</td><td data-label="作るもの">動きのある自己紹介ページ</td></tr><tr><td data-label="Part">3</td><td data-label="内容">Flask</td><td data-label="作るもの">おみくじサイト、ひとこと掲示板</td></tr><tr><td data-label="Part">4</td><td data-label="内容">データベースと公開</td><td data-label="作るもの">投稿が消えない掲示板</td></tr><tr><td data-label="Part">5</td><td data-label="内容">ほかの言語</td><td data-label="作るもの">（読んで比べる）</td></tr></tbody></table></div>
+    </section>
+
+    <div class="part" id="part-1"><p>Part 1</p><h2>Python の基本</h2><p class="part-d">まずは Python の書き方と、ライブラリという「道具箱」を知ります。</p></div>
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 15</span></p>
+  <h2 id="h-1">Python とは</h2>
+  
+<p><dfn>Python</dfn>（パイソン）は、読みやすく書きやすいことを大切にして作られたプログラミング言語です。英語の文章に近い見た目で、初めての言語としてよく選ばれます。</p>
+<div class="tbl"><table><thead><tr><th>使われている分野</th><th>例</th></tr></thead><tbody><tr><td>Web サイト</td><td>このレッスンで作るような、サーバー側のプログラム</td></tr><tr><td>データ分析</td><td>アンケートの集計、グラフ作成</td></tr><tr><td>AI・機械学習</td><td>画像の分類、文章の生成</td></tr><tr><td>作業の自動化</td><td>ファイルの整理、定期的な情報収集</td></tr></tbody></table></div>
+<p>まずは Python が入っているか確かめて、1行だけのプログラムを動かしてみましょう。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> python3 --version
+Python 3.13.0
+
+<span class="cm">$</span> python3
+&gt;&gt;&gt; print("Hello!")
+Hello!
+&gt;&gt;&gt; 1 + 2
+3
+&gt;&gt;&gt; exit()</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Windows では <code>python3</code> の代わりに <code>python</code> や <code>py</code> と打ちます。<code>&gt;&gt;&gt;</code> が出ている状態は「対話モード」で、1行ずつ試せます。ふつうは <code>hello.py</code> のようなファイルに書いて <code>python3 hello.py</code> で実行します。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>研究室でも、アンケートの分析や AI の実験には Python がよく使われます。ここで覚えた書き方は、研究でもそのまま役立ちます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：基本の書き方</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 15</span></p>
+  <h2 id="h-2">基本の書き方</h2>
+  
+<p>最初に覚えるのは、<strong>変数・条件分岐・くり返し・関数</strong>の4つです。これだけで、たいていのプログラムが読めるようになります。</p>
+<h3>変数と表示</h3>
+<div class="code"><div class="code-h"><span>variables.py</span><button class="copy" type="button" data-copy="# 変数に値を入れて、表示する
+name = &quot;はなこ&quot;
+age = 20
+print(f&quot;{name}さんは{age}歳です&quot;)">コピー</button></div><pre><code><span class="cm"># 変数に値を入れて、表示する</span>
+name = "はなこ"
+age = 20
+print(f"{name}さんは{age}歳です")</code></pre></div>
+<div class="code out"><div class="code-h"><span>実行結果</span></div><pre><code>はなこさんは20歳です</code></pre></div>
+<p><code>=</code> は「等しい」ではなく「右の値を左の箱に入れる」という意味です。<code>f"..."</code> の中の <code>{ }</code> に変数を書くと、値に置き換わります。</p>
+<h3>条件分岐：もし〜なら</h3>
+<div class="code"><div class="code-h"><span>if.py</span><button class="copy" type="button" data-copy="score = 75
+
+if score &gt;= 80:
+    print(&quot;よくできました&quot;)
+elif score &gt;= 60:
+    print(&quot;合格&quot;)
+else:
+    print(&quot;もう少し&quot;)">コピー</button></div><pre><code>score = 75
+
+if score &gt;= 80:
+    print("よくできました")
+elif score &gt;= 60:
+    print("合格")
+else:
+    print("もう少し")</code></pre></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>Python では、行頭の空白（<dfn>インデント</dfn>）で「どこまでが if の中か」を表します。スペース4つが基本です。ずれていると <code>IndentationError</code> になります。</p></div></aside>
+<h3>リストと辞書、くり返し</h3>
+<div class="code"><div class="code-h"><span>loop.py</span><button class="copy" type="button" data-copy="# リスト：複数の値をまとめる
+fruits = [&quot;りんご&quot;, &quot;みかん&quot;, &quot;ぶどう&quot;]
+for f in fruits:
+    print(f)
+
+# 辞書：名前（キー）と値の組
+user = {&quot;name&quot;: &quot;はなこ&quot;, &quot;grade&quot;: 2}
+print(user[&quot;name&quot;])">コピー</button></div><pre><code><span class="cm"># リスト：複数の値をまとめる</span>
+fruits = ["りんご", "みかん", "ぶどう"]
+for f in fruits:
+    print(f)
+
+<span class="cm"># 辞書：名前（キー）と値の組</span>
+user = {"name": "はなこ", "grade": 2}
+print(user["name"])</code></pre></div>
+<div class="code out"><div class="code-h"><span>実行結果</span></div><pre><code>りんご
+みかん
+ぶどう
+はなこ</code></pre></div>
+<h3>関数：処理に名前をつける</h3>
+<div class="code"><div class="code-h"><span>function.py</span><button class="copy" type="button" data-copy="def greet(name):
+    return f&quot;こんにちは、{name}さん&quot;
+
+message = greet(&quot;たろう&quot;)
+print(message)">コピー</button></div><pre><code>def greet(name):
+    return f"こんにちは、{name}さん"
+
+message = greet("たろう")
+print(message)</code></pre></div>
+<p><code>def</code> で関数を作り、<code>return</code> で結果を返します。このあと Flask でも、<strong>「URL ごとに関数を作り、その関数が HTML を return する」</strong>という形が出てきます。</p>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">次のうち、Python で「どこまでが if の中か」を表しているものは？</p><div class="opts"><button class="opt" type="button">かっこ { }</button><button class="opt" type="button">行頭の空白（インデント）</button><button class="opt" type="button">行末のセミコロン</button></div><p class="fb">Python はインデントでまとまりを表します。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：ライブラリを使う</a></div>
+</section>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 15</span></p>
+  <h2 id="h-3">ライブラリを使う</h2>
+  
+<p><dfn>ライブラリ</dfn>は、よく使う機能をまとめた「道具箱」です。自分で一から書かなくても、<code>import</code> するだけで使えます。</p>
+<div class="code"><div class="code-h"><span>library.py</span><button class="copy" type="button" data-copy="import random   # 標準ライブラリ：最初から入っている
+
+result = random.choice([&quot;大吉&quot;, &quot;中吉&quot;, &quot;小吉&quot;])
+print(result)">コピー</button></div><pre><code>import random   <span class="cm"># 標準ライブラリ：最初から入っている</span>
+
+result = random.choice(["大吉", "中吉", "小吉"])
+print(result)</code></pre></div>
+<p>Python に最初から入っているものを<dfn>標準ライブラリ</dfn>、あとから入れるものを<dfn>外部ライブラリ</dfn>といいます。外部ライブラリは <code>pip</code> というコマンドで入れます。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> python3 -m venv venv              <span class="cm"># 仮想環境を作る（フォルダごとに1回）</span>
+<span class="cm">$</span> source venv/bin/activate          <span class="cm"># 有効にする（Windows: venv\Scripts\activate）</span>
+<span class="cm">$</span> pip install flask                 <span class="cm"># 外部ライブラリを入れる</span></code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><dfn>仮想環境（venv）</dfn>は、プロジェクトごとに専用の道具箱を用意する仕組みです。プロジェクト A と B で必要なライブラリが違っても、ぶつからずにすみます。</p><p>Windows の PowerShell で有効にしようとして「スクリプトの実行が無効になっている」と出たら、<code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code> を一度だけ実行してから、もう一度試します。</p></div></aside>
+<div class="tbl stack"><table><thead><tr><th>分野</th><th>ライブラリ</th><th>ひとことで</th></tr></thead><tbody><tr><td data-label="分野">Web</td><td data-label="ライブラリ"><code>Flask</code></td><td data-label="ひとことで">小さく始められる。このレッスンで使う</td></tr><tr><td data-label="分野">Web</td><td data-label="ライブラリ"><code>Django</code></td><td data-label="ひとことで">ログインや管理画面まで全部入り。大きなサイト向け</td></tr><tr><td data-label="分野">Web</td><td data-label="ライブラリ"><code>FastAPI</code></td><td data-label="ひとことで">データをやりとりする API 作りが得意</td></tr><tr><td data-label="分野">データ</td><td data-label="ライブラリ"><code>pandas</code> / <code>matplotlib</code></td><td data-label="ひとことで">表の集計 / グラフ作成</td></tr><tr><td data-label="分野">通信</td><td data-label="ライブラリ"><code>requests</code></td><td data-label="ひとことで">Web からデータを取ってくる</td></tr><tr><td data-label="分野">AI</td><td data-label="ライブラリ"><code>scikit-learn</code> / <code>PyTorch</code></td><td data-label="ひとことで">機械学習 / ディープラーニング</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>このように Web サイトを作るための土台になるライブラリを、<dfn>フレームワーク</dfn>と呼びます。Flask や Django はフレームワークです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：HTML：ページの骨組み</a></div>
+</section><div class="part" id="part-2"><p>Part 2</p><h2>フロントエンド：HTML・CSS・JavaScript</h2><p class="part-d">ブラウザに表示される側の3つの言語を、表示結果を見ながら学びます。</p></div>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 15</span></p>
+  <h2 id="h-4">HTML：ページの骨組み</h2>
+  
+<p>Python のサーバーが最終的に返すのは、HTML・CSS・JavaScript です。Python のコードを書く前に、ブラウザ側の3つを見ておきましょう。第1回の Step 9 で見た「骨組み・見た目・動き」の正体です。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 200" role="img" aria-label="HTMLにCSSとJavaScriptを足してページが完成していく">
+<rect class="s fc" x="50" y="6" width="260" height="188" rx="8"/><path class="s" d="M50 28H310"/><g class="fl"><circle cx="62" cy="17" r="3"/><circle cx="72" cy="17" r="3"/><circle cx="82" cy="17" r="3"/></g>
+<text class="tm mono tb tp" x="300" y="21" text-anchor="end" data-s="1">HTML だけ</text><text class="tm mono tb tp" x="300" y="21" text-anchor="end" data-s="2">+ CSS</text><text class="tm mono tb tp" x="300" y="21" text-anchor="end" data-s="3">+ JavaScript</text>
+<g data-s="1"><text x="66" y="62" style="font-family:'Times New Roman',serif;font-size:22px;font-weight:bold;fill:var(--ink)">はじめまして</text>
+<text x="66" y="90" style="font-family:'Times New Roman',serif;font-size:12px;fill:var(--ink)">大学で情報を学んでいます。</text>
+<text x="80" y="114" style="font-family:'Times New Roman',serif;font-size:12px;fill:var(--ink)">・趣味：写真</text><text x="80" y="132" style="font-family:'Times New Roman',serif;font-size:12px;fill:var(--ink)">・好きな言語：Python</text>
+<rect class="s thin" x="66" y="150" width="44" height="18" rx="2"/><text x="88" y="163" text-anchor="middle" style="font-size:10px;fill:var(--ink)">いいね</text></g>
+<g data-s="2-3"><rect class="fs" x="51" y="29" width="258" height="40" /><text class="tb" x="70" y="56" style="font-size:18px;fill:var(--shion)">はじめまして</text>
+<text class="t" x="70" y="92" style="font-size:12px">大学で情報を学んでいます。</text>
+<text class="tm" x="70" y="114">趣味：写真</text><text class="tm" x="70" y="132">好きな言語：Python</text>
+<rect class="fp" x="70" y="148" width="74" height="26" rx="6"/></g>
+<text class="tw tb" x="107" y="165" text-anchor="middle" style="font-size:12px" data-s="2">いいね</text>
+<text class="tw tb" x="107" y="165" text-anchor="middle" style="font-size:12px" data-s="3">いいね 3</text>
+<g data-s="3"><circle class="s sp" cx="132" cy="168" r="11" style="opacity:.5"/><path class="s fc" d="M132 166l0 18 5-5 4 8 3-2-4-7 7-1z"/><text class="tm tp tb" x="164" y="166">押すと数が増える</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 3</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">ページができるまで</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>HTML だけ：見出し・文章・リスト・ボタンが並ぶ。見た目は素っ気ない</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>CSS を足す：色・大きさ・余白が整う</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>JavaScript を足す：ボタンを押すと反応するようになる</span></button></li></ol>
+</div>
+<p><dfn>HTML</dfn> は、ページの<strong>構造（何がどこにあるか）</strong>を書く言語です。<code>&lt;h1&gt;</code> のような<dfn>タグ</dfn>で文章を囲んで、「これは見出し」「これはリスト」と意味をつけます。</p>
+<div class="code"><div class="code-h"><span>index.html</span><button class="copy" type="button" data-copy="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ja&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;はなこのページ&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;はじめまして&lt;/h1&gt;
+  &lt;p&gt;大学で情報を学んでいます。&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;趣味：写真&lt;/li&gt;
+    &lt;li&gt;好きな言語：Python&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;a href=&quot;https://example.com&quot;&gt;リンク&lt;/a&gt;
+  &lt;button id=&quot;like&quot;&gt;いいね&lt;/button&gt;
+  &lt;script src=&quot;script.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;">コピー</button></div><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;はなこのページ&lt;/title&gt;
+  &lt;link rel="stylesheet" href="style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;はじめまして&lt;/h1&gt;
+  &lt;p&gt;大学で情報を学んでいます。&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;趣味：写真&lt;/li&gt;
+    &lt;li&gt;好きな言語：Python&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;a href="https://example.com"&gt;リンク&lt;/a&gt;
+  &lt;button id="like"&gt;いいね&lt;/button&gt;
+  &lt;script src="script.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+<div class="demo"><div class="demo-h"><span>ブラウザでの表示結果（HTML だけ）</span></div>
+<div class="demo-page" data-js="off"><h1>はじめまして</h1><p>大学で情報を学んでいます。</p><ul><li>趣味：写真</li><li>好きな言語：Python</li></ul><a href="https://example.com">リンク</a><button class="like" type="button">いいね</button></div></div>
+<div class="tbl"><table><thead><tr><th>タグ</th><th>意味</th></tr></thead><tbody><tr><td><code>&lt;h1&gt;</code>〜<code>&lt;h6&gt;</code></td><td>見出し（数字が小さいほど大きい）</td></tr><tr><td><code>&lt;p&gt;</code></td><td>段落</td></tr><tr><td><code>&lt;ul&gt;</code> と <code>&lt;li&gt;</code></td><td>箇条書きのリストと、その項目</td></tr><tr><td><code>&lt;a href="..."&gt;</code></td><td>リンク</td></tr><tr><td><code>&lt;img src="..."&gt;</code></td><td>画像</td></tr><tr><td><code>&lt;button&gt;</code></td><td>ボタン</td></tr><tr><td><code>&lt;form&gt;</code> と <code>&lt;input&gt;</code></td><td>入力フォーム（Step 10 で使う）</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>まだ CSS も JavaScript もないので、見た目は素っ気なく、ボタンを押しても何も起きません。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：CSS：見た目を整える</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 15</span></p>
+  <h2 id="h-5">CSS：見た目を整える</h2>
+  
+<p><dfn>CSS</dfn> は、<strong>見た目（色・大きさ・配置）</strong>を指定する言語です。「どの部分に（セレクター）」「何を（プロパティ）」「どうする（値）」を書きます。</p>
+<div class="code"><div class="code-h"><span>style.css</span><button class="copy" type="button" data-copy="body {
+  font-family: sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+h1 {
+  color: #2453d4;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2453d4;
+  color: white;
+}">コピー</button></div><pre><code>body {
+  font-family: sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+h1 {
+  color: #2453d4;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2453d4;
+  color: white;
+}</code></pre></div>
+<div class="demo"><div class="demo-h"><span>ブラウザでの表示結果（ボタンで CSS を切り替えられます）</span><button class="copy" type="button" data-css-toggle aria-pressed="true">CSS を外す</button></div>
+<div class="demo-page styled" data-js="off"><h1>はじめまして</h1><p>大学で情報を学んでいます。</p><ul><li>趣味：写真</li><li>好きな言語：Python</li></ul><a href="https://example.com">リンク</a><button class="like" type="button">いいね</button></div></div>
+<p>HTML は同じまま、CSS だけで見た目が変わることを確かめてみましょう。<code>h1 { color: #2453d4; }</code> は「すべての h1 の文字色を青にする」という意味です。</p>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>HTML と CSS を別のファイルに分けておくと、デザインだけを変えたいときに HTML を触らずにすみます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：JavaScript：動きをつける</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 15</span></p>
+  <h2 id="h-6">JavaScript：動きをつける</h2>
+  
+<p><dfn>JavaScript</dfn> は、ページに<strong>動き</strong>をつける言語です。<strong>ブラウザの中で</strong>動くので、サーバーに問い合わせなくても、クリックや入力にすぐ反応できます。</p>
+<div class="code"><div class="code-h"><span>script.js</span><button class="copy" type="button" data-copy="// id=&quot;like&quot; のボタンを探す
+const button = document.querySelector(&quot;#like&quot;);
+let count = 0;
+
+// クリックされたら数を1増やして、文字を書き換える
+button.addEventListener(&quot;click&quot;, () =&gt; {
+  count = count + 1;
+  button.textContent = `いいね ${count}`;
+});">コピー</button></div><pre><code><span class="cm">// id="like" のボタンを探す</span>
+const button = document.querySelector("#like");
+let count = 0;
+
+<span class="cm">// クリックされたら数を1増やして、文字を書き換える</span>
+button.addEventListener("click", () =&gt; {
+  count = count + 1;
+  button.textContent = `いいね ${count}`;
+});</code></pre></div>
+<div class="demo"><div class="demo-h"><span>ブラウザでの表示結果（ボタンを押してみよう）</span></div>
+<div class="demo-page styled" data-js="on"><h1>はじめまして</h1><p>大学で情報を学んでいます。</p><ul><li>趣味：写真</li><li>好きな言語：Python</li></ul><a href="https://example.com">リンク</a><button class="like" type="button">いいね</button></div></div>
+<div class="tbl stack"><table><thead><tr><th></th><th>JavaScript</th><th>Python</th></tr></thead><tbody><tr><td data-label="">どこで動く？</td><td data-label="JavaScript">ブラウザの中（フロントエンド）</td><td data-label="Python">サーバーの中（バックエンド）</td></tr><tr><td data-label="">得意なこと</td><td data-label="JavaScript">クリックへの反応、画面の書き換え</td><td data-label="Python">データの保存・計算、ページの組み立て</td></tr><tr><td data-label="">このレッスンでは</td><td data-label="JavaScript">ボタンの反応</td><td data-label="Python">ページを返すサーバー</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>JavaScript は、Node.js という仕組みを使えばサーバー側でも動かせます。Step 15 で紹介します。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">ボタンを押したときにページの文字を書き換える処理は、ふつうどこで動く？</p><div class="opts"><button class="opt" type="button">ブラウザの JavaScript</button><button class="opt" type="button">サーバーの Python</button><button class="opt" type="button">CSS</button></div><p class="fb">画面上の反応は、ブラウザの中の JavaScript が担当します。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：Python で Web サイトを作るしくみ</a></div>
+</section><div class="part" id="part-3"><p>Part 3</p><h2>Python で Web サイトを作る</h2><p class="part-d">Flask というライブラリを使って、Python からページを返します。</p></div>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 15</span></p>
+  <h2 id="h-7">Python で Web サイトを作るしくみ</h2>
+  
+<p>第1回の Step 7 で、注文を受けてからページを作る「動的なページ」を学びました。Python で Web サイトを作るとは、まさにこの<strong>注文を受けてページを作る係（バックエンド）</strong>を書くことです。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 225" role="img" aria-label="Flaskがリクエストに合う関数を探して実行する">
+<use href="#i-pc" x="8" y="84" width="72" height="56"/><text class="t" x="44" y="160" text-anchor="middle">ブラウザ</text>
+<text class="tm tp tb" x="44" y="108" text-anchor="middle" style="font-size:9px" data-s="5">こんにちは</text>
+<rect class="s fc" x="170" y="10" width="184" height="206" rx="8"/><text class="t tb mono" x="182" y="32" style="font-size:12.5px">app.py（Flask）</text>
+<g class="s fc"><rect x="180" y="44" width="164" height="40" rx="5"/><rect x="180" y="92" width="164" height="40" rx="5"/><rect x="180" y="140" width="164" height="40" rx="5"/></g>
+<rect class="s sp fs" x="180" y="92" width="164" height="40" rx="5" style="stroke-width:3" data-s="2-4"/>
+<text class="t mono" x="188" y="61" style="font-size:11.5px">@app.route("/")</text><text class="tm mono" x="188" y="77">→ def index()</text>
+<text class="t mono" x="188" y="109" style="font-size:11.5px">@app.route("/hello")</text><text class="tm mono" x="188" y="125">→ def hello()</text>
+<text class="t mono" x="188" y="157" style="font-size:11.5px">@app.route("/post")</text><text class="tm mono" x="188" y="173">→ def post()</text>
+<text class="tm tp tb" x="262" y="204" text-anchor="middle" data-s="3">hello() を実行中…</text>
+<g data-at="1:62,30|2:80,30" data-s="1-2"><rect class="s fy" width="86" height="26" rx="5"/><text class="t mono tb" x="43" y="18" text-anchor="middle" style="font-size:11.5px">GET /hello</text></g>
+<g data-at="4:80,176|5:62,176" data-s="4"><rect class="s fy" width="86" height="26" rx="5"/><text class="t mono tb" x="43" y="18" text-anchor="middle" style="font-size:11.5px">HTML</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">ルーティング</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>ブラウザが GET /hello を送る</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>Flask が「ルート」の一覧から /hello を探す</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>見つかった hello() 関数が動く</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>関数が return した HTML が、レスポンスとして返る</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>ブラウザに表示される</span></button></li></ol>
+</div>
+<p>Flask では、<strong>「この URL が来たら、この関数を動かす」</strong>という対応表を書きます。これを<dfn>ルーティング</dfn>といいます。関数が <code>return</code> した文字列が、そのままレスポンスとしてブラウザに届きます。</p>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>レストランの厨房です。注文（URL）ごとに担当のシェフ（関数）が決まっていて、注文票を見て担当者が料理（HTML）を作ります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：Flask で最初のページを作る</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 15</span></p>
+  <h2 id="h-8">Flask で最初のページを作る</h2>
+  
+<p>いよいよ Python で Web ページを返します。仮想環境を有効にして、Flask を入れておきましょう（Step 3）。</p>
+<div class="code"><div class="code-h"><span>app.py</span><button class="copy" type="button" data-copy="from flask import Flask
+from markupsafe import escape
+
+app = Flask(__name__)
+
+@app.route(&quot;/&quot;)
+def index():
+    return &quot;&lt;h1&gt;こんにちは、Flask！&lt;/h1&gt;&quot;
+
+@app.route(&quot;/hello/&lt;name&gt;&quot;)
+def hello(name):
+    return f&quot;&lt;p&gt;{escape(name)}さん、ようこそ&lt;/p&gt;&quot;
+
+if __name__ == &quot;__main__&quot;:
+    app.run(debug=True)">コピー</button></div><pre><code>from flask import Flask
+from markupsafe import escape
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "&lt;h1&gt;こんにちは、Flask！&lt;/h1&gt;"
+
+@app.route("/hello/&lt;name&gt;")
+def hello(name):
+    return f"&lt;p&gt;{escape(name)}さん、ようこそ&lt;/p&gt;"
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre></div>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> python app.py
+ * Running on http://127.0.0.1:5000</code></pre></div>
+<p>表示された <code>http://127.0.0.1:5000</code> をブラウザで開くと、「こんにちは、Flask！」が表示されます。<code>http://127.0.0.1:5000/hello/はなこ</code> も試してみましょう。</p>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Mac で起動しないとき</p><div><p>Mac で <code>Address already in use</code> と出て起動しないときは、AirPlay がポート5000を使っています。最後の行を <code>app.run(debug=True, port=5001)</code> に変えて、<code>http://127.0.0.1:5001</code> を開きましょう。</p></div></aside>
+<div class="tbl"><table><thead><tr><th>書き方</th><th>意味</th></tr></thead><tbody><tr><td><code>@app.route("/")</code></td><td>この URL が来たら、すぐ下の関数を動かす</td></tr><tr><td><code>/hello/&lt;name&gt;</code></td><td>URL の一部を、関数の引数 <code>name</code> として受け取る</td></tr><tr><td><code>127.0.0.1</code></td><td>「自分自身の PC」を表す特別な IP アドレス（localhost）</td></tr><tr><td><code>5000</code></td><td>ポート番号（第1回 Step 4 の「窓口番号」）</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>URL から来た値をそのまま HTML に入れると、他人が仕込んだプログラムが動いてしまう危険があります（クロスサイトスクリプティング）。上の例で <code>escape()</code> を使っているのはそのためです。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>debug=True</code> にすると、ファイルを保存するたびに自動で再起動し、エラーの詳細も表示されます。練習用の設定なので、公開するときは必ず外します。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">Flask で「この URL ならこの関数」と対応づける書き方は？</p><div class="opts"><button class="opt" type="button">import flask</button><button class="opt" type="button">@app.route(&quot;/...&quot;)</button><button class="opt" type="button">print(&quot;/...&quot;)</button></div><p class="fb">@app.route がルーティングの目印です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：テンプレートで HTML を組み立てる</a></div>
+</section>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 15</span></p>
+  <h2 id="h-9">テンプレートで HTML を組み立てる</h2>
+  
+<p>HTML を Python の文字列で書き続けるのは大変です。そこで、HTML は別のファイル（<dfn>テンプレート</dfn>）に書き、変わる部分だけを Python から埋め込みます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 215" role="img" aria-label="テンプレートにデータを埋め込んでHTMLを作る">
+<rect class="s fc" x="6" y="22" width="168" height="66" rx="6"/><text class="tm tb" x="6" y="15">app.py のデータ</text>
+<text class="t mono" x="14" y="46" style="font-size:11px">title = "プレゼミ"</text><text class="t mono" x="14" y="66" style="font-size:11px">members = ["はなこ",</text><text class="t mono" x="14" y="81" style="font-size:11px">  "たろう", "じろう"]</text>
+<rect class="s fc" x="6" y="114" width="168" height="94" rx="6"/><text class="tm tb" x="6" y="107">テンプレート（穴あき HTML）</text>
+<text class="t mono" x="14" y="138" style="font-size:10.5px">&lt;h1&gt;<tspan class="tp tb">{{ title }}</tspan>&lt;/h1&gt;</text>
+<text class="t mono" x="14" y="158" style="font-size:10.5px"><tspan class="tp tb">{% for m in members %}</tspan></text>
+<text class="t mono" x="14" y="176" style="font-size:10.5px">  &lt;li&gt;<tspan class="tp tb">{{ m }}</tspan>&lt;/li&gt;</text>
+<text class="t mono" x="14" y="196" style="font-size:10.5px"><tspan class="tp tb">{% endfor %}</tspan></text>
+<rect class="s sp" x="3" y="19" width="174" height="72" rx="8" style="stroke-width:3" data-s="1"/>
+<rect class="s sp" x="3" y="111" width="174" height="100" rx="8" style="stroke-width:3" data-s="2"/>
+<rect class="s fs" x="216" y="44" width="138" height="140" rx="6"/><text class="tm tb" x="216" y="37">できあがった HTML</text>
+<g data-s="3-4"><path class="s" d="M178 112H210" marker-end="url(#ar)"/><text class="tm mono tb" x="194" y="104" text-anchor="middle" style="font-size:9.5px">render</text></g>
+<text class="t mono" x="224" y="72" style="font-size:11px" data-s="3-4">&lt;h1&gt;プレゼミ&lt;/h1&gt;</text>
+<g data-s="4"><text class="t mono" x="224" y="104" style="font-size:11px">&lt;li&gt;はなこ&lt;/li&gt;</text><text class="t mono" x="224" y="126" style="font-size:11px">&lt;li&gt;たろう&lt;/li&gt;</text><text class="t mono" x="224" y="148" style="font-size:11px">&lt;li&gt;じろう&lt;/li&gt;</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">テンプレート</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>Python の側で、表示したいデータを用意する</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>HTML の「穴あき」テンプレートを用意する。{{ }} が穴、{% %} が命令</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>render_template が、穴にデータを埋め込む</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>for の命令で、メンバーの数だけ &lt;li&gt; がくり返される</span></button></li></ol>
+</div>
+<pre class="code tree" style="padding:14px 16px;margin:0;overflow-x:auto">my-app/
+├── app.py            ← Python（バックエンド）
+├── templates/
+│   └── index.html    ← HTML のテンプレート
+└── static/
+    ├── style.css     ← CSS
+    └── script.js     ← JavaScript</pre>
+<div class="code"><div class="code-h"><span>app.py</span><button class="copy" type="button" data-copy="from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route(&quot;/&quot;)
+def index():
+    members = [&quot;はなこ&quot;, &quot;たろう&quot;, &quot;じろう&quot;]
+    return render_template(&quot;index.html&quot;, title=&quot;プレゼミ&quot;, members=members)
+
+if __name__ == &quot;__main__&quot;:
+    app.run(debug=True)">コピー</button></div><pre><code>from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    members = ["はなこ", "たろう", "じろう"]
+    return render_template("index.html", title="プレゼミ", members=members)
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre></div>
+<div class="code"><div class="code-h"><span>templates/index.html</span><button class="copy" type="button" data-copy="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ja&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;{{ title }}&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;{{ url_for(&#x27;static&#x27;, filename=&#x27;style.css&#x27;) }}&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;{{ title }}のメンバー&lt;/h1&gt;
+  &lt;ul&gt;
+    {% for m in members %}
+      &lt;li&gt;{{ m }}&lt;/li&gt;
+    {% endfor %}
+  &lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;">コピー</button></div><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;{{ title }}&lt;/title&gt;
+  &lt;link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;{{ title }}のメンバー&lt;/h1&gt;
+  &lt;ul&gt;
+    {% for m in members %}
+      &lt;li&gt;{{ m }}&lt;/li&gt;
+    {% endfor %}
+  &lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+<div class="tbl"><table><thead><tr><th>記号</th><th>意味</th></tr></thead><tbody><tr><td><code>{{ 変数 }}</code></td><td>値をそこに表示する</td></tr><tr><td><code>{% for %}</code> 〜 <code>{% endfor %}</code></td><td>くり返す</td></tr><tr><td><code>{% if %}</code> 〜 <code>{% endif %}</code></td><td>条件で表示を変える</td></tr><tr><td><code>url_for("static", ...)</code></td><td>static フォルダの CSS や JS の場所を作る</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>このテンプレートの仕組みは <dfn>Jinja2</dfn>（ジンジャ）というライブラリで、Flask と一緒に入ります。<code>{{ }}</code> で埋め込んだ値は自動でエスケープされるので、Step 8 の危険も防げます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：フォームで入力を受け取る</a></div>
+</section>
+<section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Step 10<span>/ 15</span></p>
+  <h2 id="h-10">フォームで入力を受け取る</h2>
+  
+<p>ユーザーから入力を受け取るには、HTML の <code>&lt;form&gt;</code> を使います。送信ボタンを押すと、入力内容が <code>POST</code>（第1回 Step 6）でサーバーに届きます。ここでは「ひとこと掲示板」を作ります。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 225" role="img" aria-label="フォームから投稿を受け取って一覧に表示する流れ">
+<use href="#i-pc" x="8" y="80" width="72" height="56"/><text class="t" x="44" y="156" text-anchor="middle">ブラウザ</text>
+<text class="tm tp tb" x="44" y="104" text-anchor="middle" style="font-size:9px" data-s="5">・こんにちは</text>
+<rect class="s fc" x="216" y="10" width="138" height="206" rx="8"/><text class="t tb mono" x="228" y="32" style="font-size:12.5px">app.py</text>
+<rect class="s fs" x="228" y="132" width="114" height="70" rx="5"/><text class="tm mono tb" x="236" y="150">posts = [</text>
+<g data-s="2-5"><rect class="fy" x="236" y="160" width="96" height="22" rx="3"/><text class="t mono" x="242" y="176" style="font-size:11.5px">"こんにちは"</text></g>
+<text class="tm mono" x="236" y="196" data-s="1">]</text>
+<text class="t mono tp tb" x="228" y="70" style="font-size:11px" data-s="2">request.form["text"]</text>
+<text class="t mono tp tb" x="228" y="70" style="font-size:11px" data-s="3">redirect("/")</text>
+<text class="t mono tp tb" x="228" y="70" style="font-size:11px" data-s="4-5">render_template(...)</text>
+<g data-at="1:86,26|2:100,26" data-s="1-2"><rect class="s fy" width="110" height="40" rx="5"/><text class="t mono tb" x="10" y="17" style="font-size:11.5px">POST /post</text><text class="tm mono" x="10" y="33">text=こんにちは</text></g>
+<g data-at="3:100,82" data-s="3"><rect class="s fc" width="110" height="40" rx="5"/><text class="t mono tb" x="10" y="17" style="font-size:11.5px">302</text><text class="tm mono" x="10" y="33">Location: /</text></g>
+<g data-at="4:86,26|5:100,26" data-s="4"><rect class="s fc" width="110" height="26" rx="5"/><text class="t mono tb" x="10" y="18" style="font-size:11.5px">GET /</text></g>
+<g data-s="5"><path class="s sp" d="M212 112H90" marker-end="url(#arp)"/><text class="tm tp tb mono" x="150" y="104" text-anchor="middle">一覧の HTML</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">フォームの流れ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>フォームに「こんにちは」と入力して送信すると、POST /post が届く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>request.form[&quot;text&quot;] で受け取り、posts リストに追加する</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>redirect(&quot;/&quot;) で「トップページを見に行って」と返す</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>ブラウザが自動で GET / を送り直す</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>投稿が入った一覧のページが表示される</span></button></li></ol>
+</div>
+<div class="code"><div class="code-h"><span>app.py</span><button class="copy" type="button" data-copy="from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+posts = []   # 投稿を入れておくリスト（サーバーを止めると消える）
+
+@app.route(&quot;/&quot;)
+def index():
+    return render_template(&quot;board.html&quot;, posts=posts)
+
+@app.route(&quot;/post&quot;, methods=[&quot;POST&quot;])
+def post():
+    text = request.form[&quot;text&quot;]
+    if text:
+        posts.append(text)
+    return redirect(&quot;/&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    app.run(debug=True)">コピー</button></div><pre><code>from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+posts = []   <span class="cm"># 投稿を入れておくリスト（サーバーを止めると消える）</span>
+
+@app.route("/")
+def index():
+    return render_template("board.html", posts=posts)
+
+@app.route("/post", methods=["POST"])
+def post():
+    text = request.form["text"]
+    if text:
+        posts.append(text)
+    return redirect("/")
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre></div>
+<div class="code"><div class="code-h"><span>templates/board.html（抜粋）</span><button class="copy" type="button" data-copy="&lt;form action=&quot;/post&quot; method=&quot;post&quot;&gt;
+  &lt;input name=&quot;text&quot; placeholder=&quot;ひとこと&quot;&gt;
+  &lt;button&gt;投稿&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;ul&gt;
+  {% for p in posts %}
+    &lt;li&gt;{{ p }}&lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;">コピー</button></div><pre><code>&lt;form action="/post" method="post"&gt;
+  &lt;input name="text" placeholder="ひとこと"&gt;
+  &lt;button&gt;投稿&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;ul&gt;
+  {% for p in posts %}
+    &lt;li&gt;{{ p }}&lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;</code></pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>投稿を受け取ったあとに <code>redirect("/")</code> でトップへ戻すのは、ブラウザを再読み込みしたときに同じ投稿が二重に送られるのを防ぐためです。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>この例では投稿を Python のリストに入れているので、サーバーを止めると消えます。ずっと残すには <dfn>データベース</dfn> に保存します。次の Part 4 で作ります。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>入力は「何が来るかわからないもの」として扱います。試しに <code>&lt;b&gt;テスト&lt;/b&gt;</code> と投稿しても、太字にならず文字のまま表示されるはずです。Jinja2 の自動エスケープが働いている証拠です。本番のサイトでは、なりすまし送信を防ぐ CSRF 対策（Flask-WTF など）も加えます。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">フォームで送られてきた text の値を、Flask で受け取る書き方は？</p><div class="opts"><button class="opt" type="button">request.form[&quot;text&quot;]</button><button class="opt" type="button">print(&quot;text&quot;)</button><button class="opt" type="button">redirect(&quot;text&quot;)</button></div><p class="fb">request.form に、フォームの name ごとの値が入っています。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-11">次へ：データベースと SQL</a></div>
+</section><div class="part" id="part-4"><p>Part 4</p><h2>データを保存して公開する</h2><p class="part-d">サーバーを止めても消えないように、データベースに保存します。そのあと公開の準備をします。</p></div>
+<section class="step" id="step-11" data-step="11" aria-labelledby="h-11">
+  <p class="step-no">Step 11<span>/ 15</span></p>
+  <h2 id="h-11">データベースと SQL</h2>
+  
+<p>Step 10 の掲示板は、サーバーを止めると投稿が消えてしまいました。データをずっと残しておくための専用の保管庫が<dfn>データベース</dfn>です。</p>
+<p>多くのデータベースは、データを Excel のような<dfn>テーブル</dfn>（表）で管理します。1行が1件のデータ、1列が項目です。テーブルに命令するための言語を <dfn>SQL</dfn>（エスキューエル）といいます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 230" role="img" aria-label="SQLでテーブルにデータを追加して取り出すアニメーション">
+<text class="tm tb" x="8" y="16">board.db（ファイル）</text>
+<rect class="s fc" x="6" y="24" width="214" height="128" rx="6"/>
+<text class="tm tb mono" x="16" y="42">posts テーブル</text>
+<rect class="fs" x="14" y="50" width="198" height="22"/>
+<text class="t tb mono" x="22" y="65" style="font-size:11.5px">id</text><text class="t tb mono" x="54" y="65" style="font-size:11.5px">text</text><text class="t tb mono" x="140" y="65" style="font-size:11.5px">created_at</text>
+<g data-s="2-6"><text class="t mono" x="24" y="92" style="font-size:11.5px">1</text><text class="t" x="54" y="92" style="font-size:12px">こんにちは</text><text class="tm mono" x="140" y="92">11-14 06:30</text></g>
+<g data-s="3-6"><text class="t mono" x="24" y="116" style="font-size:11.5px">2</text><text class="t" x="54" y="116" style="font-size:12px">よろしく</text><text class="tm mono" x="140" y="116">11-14 06:31</text></g>
+<path class="s sl thin" d="M14 100H212M14 124H212"/>
+<rect class="s sp" x="12" y="78" width="202" height="48" rx="3" style="stroke-width:2.6" data-s="4"/>
+<rect class="s sp" x="12" y="78" width="202" height="24" rx="3" style="stroke-width:2.6" data-s="2"/>
+<rect class="s sp" x="12" y="102" width="202" height="24" rx="3" style="stroke-width:2.6" data-s="3"/>
+<use href="#i-server" x="290" y="40" width="56" height="64"/><text class="t mono" x="318" y="122" text-anchor="middle" style="font-size:12px">app.py</text>
+<g data-s="1"><path class="s sp" d="M282 72H226" marker-end="url(#arp)"/></g>
+<g data-s="2-3"><path class="s sp" d="M282 72H226" marker-end="url(#arp)"/></g>
+<g data-s="4"><path class="s sp" d="M226 102H282" marker-end="url(#arp)"/></g>
+<rect class="s fc" x="6" y="164" width="348" height="58" rx="6"/>
+<text class="t mono tp tb" x="18" y="190" style="font-size:11.5px" data-s="1">CREATE TABLE posts (id, text, created_at)</text>
+<text class="t mono tp tb" x="18" y="190" style="font-size:11.5px" data-s="2">INSERT INTO posts (text) VALUES ('こんにちは')</text>
+<text class="t mono tp tb" x="18" y="190" style="font-size:11.5px" data-s="3">INSERT INTO posts (text) VALUES ('よろしく')</text>
+<text class="t mono tp tb" x="18" y="190" style="font-size:11.5px" data-s="4">SELECT * FROM posts</text>
+<text class="tm" x="18" y="210" data-s="4">→ 2行がまとめて Python に返ってくる</text>
+<g data-s="5-6"><text class="t mono tp tb" x="18" y="190" style="font-size:11.5px">（サーバーを止めて、もう一度起動）</text><text class="tm" x="18" y="210">データはファイルに入っているので、消えずに残っている</text></g>
+<g data-s="5"><rect class="fy" x="286" y="36" width="64" height="72" rx="6" opacity=".35"/><text class="tm tb" x="318" y="30" text-anchor="middle">再起動</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 6</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">SQL の基本</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>CREATE TABLE で、データを入れる表（テーブル）を作る</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>INSERT で、1行目のデータを追加する</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>もう1行追加する。id と日時は自動で入る</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>SELECT で、表からデータを取り出す</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>サーバーを止めて、もう一度起動する</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>データはファイルに保存されているので、消えずに残っている</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th>SQL</th><th>意味</th><th>例</th></tr></thead><tbody><tr><td data-label="SQL"><code>CREATE TABLE</code></td><td data-label="意味">表を作る</td><td data-label="例">掲示板用の posts 表を作る</td></tr><tr><td data-label="SQL"><code>INSERT</code></td><td data-label="意味">行を追加する</td><td data-label="例">投稿を1件保存する</td></tr><tr><td data-label="SQL"><code>SELECT</code></td><td data-label="意味">行を取り出す</td><td data-label="例">投稿の一覧を表示する</td></tr><tr><td data-label="SQL"><code>UPDATE</code></td><td data-label="意味">行を書き換える</td><td data-label="例">投稿を編集する</td></tr><tr><td data-label="SQL"><code>DELETE</code></td><td data-label="意味">行を消す</td><td data-label="例">投稿を削除する</td></tr><tr><td data-label="SQL"><code>WHERE</code> / <code>ORDER BY</code></td><td data-label="意味">条件をしぼる / 並べ替える</td><td data-label="例">id が 3 の投稿だけ / 新しい順</td></tr></tbody></table></div>
+<p><dfn>SQLite</dfn>（エスキューライト）は、データベース全体を<strong>1つのファイル</strong>に保存する、手軽なデータベースです。Python に最初から入っているので、インストールなしで使えます。</p>
+<div class="code"><div class="code-h"><span>sqlite_test.py</span><button class="copy" type="button" data-copy="import sqlite3
+
+conn = sqlite3.connect(&quot;board.db&quot;)   # ファイルがなければ作られる
+
+# 表（テーブル）を作る
+conn.execute(&quot;&quot;&quot;
+    CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+&quot;&quot;&quot;)
+
+# データを追加して、確定する
+conn.execute(&quot;INSERT INTO posts (text) VALUES (?)&quot;, (&quot;こんにちは&quot;,))
+conn.commit()
+
+# データを取り出す
+for row in conn.execute(&quot;SELECT id, text, created_at FROM posts&quot;):
+    print(row)
+
+conn.close()">コピー</button></div><pre><code>import sqlite3
+
+conn = sqlite3.connect("board.db")   <span class="cm"># ファイルがなければ作られる</span>
+
+<span class="cm"># 表（テーブル）を作る</span>
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+
+<span class="cm"># データを追加して、確定する</span>
+conn.execute("INSERT INTO posts (text) VALUES (?)", ("こんにちは",))
+conn.commit()
+
+<span class="cm"># データを取り出す</span>
+for row in conn.execute("SELECT id, text, created_at FROM posts"):
+    print(row)
+
+conn.close()</code></pre></div>
+<div class="code out"><div class="code-h"><span>実行結果</span></div><pre><code>(1, 'こんにちは', '2026-11-14 06:30:00')</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>conn.commit()</code> は「ここまでの変更を確定する」という意味です。第2回の Git の commit と同じ発想で、確定するまでは保存されません。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>入力をそのまま SQL の文字列に埋め込むと、入力に SQL を混ぜられて、データを盗まれたり消されたりします（<dfn>SQL インジェクション</dfn>）。値は必ず <code>?</code> を使って別に渡します。</p></div></aside>
+<div class="code"><div class="code-h"><span>安全な書き方</span></div><pre><code><span class="cm"># やってはいけない：入力をそのまま SQL に埋め込む</span>
+conn.execute(f"INSERT INTO posts (text) VALUES ('{text}')")
+
+<span class="cm"># 正しい：? の場所に、値を別に渡す</span>
+conn.execute("INSERT INTO posts (text) VALUES (?)", (text,))</code></pre></div>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">データベースから投稿の一覧を取り出す SQL は？</p><div class="opts"><button class="opt" type="button">INSERT</button><button class="opt" type="button">SELECT</button><button class="opt" type="button">DELETE</button></div><p class="fb">SELECT は「選んで取り出す」命令です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-12">次へ：掲示板の投稿を SQLite に保存する</a></div>
+</section>
+<section class="step" id="step-12" data-step="12" aria-labelledby="h-12">
+  <p class="step-no">Step 12<span>/ 15</span></p>
+  <h2 id="h-12">掲示板の投稿を SQLite に保存する</h2>
+  
+<p>Step 10 の掲示板を、リストではなく SQLite に保存するように書き換えます。変わるのは、「リストに入れる」が「テーブルに INSERT する」に、「リストを渡す」が「SELECT した結果を渡す」になるところだけです。</p>
+<div class="code"><div class="code-h"><span>app.py</span><button class="copy" type="button" data-copy="import sqlite3
+from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+DB = &quot;board.db&quot;
+
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row   # 列の名前で値を取り出せるようにする
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.execute(&quot;&quot;&quot;
+            CREATE TABLE IF NOT EXISTS posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        &quot;&quot;&quot;)
+
+@app.route(&quot;/&quot;)
+def index():
+    with get_db() as conn:
+        posts = conn.execute(&quot;SELECT * FROM posts ORDER BY id DESC&quot;).fetchall()
+    return render_template(&quot;board.html&quot;, posts=posts)
+
+@app.route(&quot;/post&quot;, methods=[&quot;POST&quot;])
+def post():
+    text = request.form[&quot;text&quot;]
+    if text:
+        with get_db() as conn:   # with を抜けるときに自動で確定（commit）される
+            conn.execute(&quot;INSERT INTO posts (text) VALUES (?)&quot;, (text,))
+    return redirect(&quot;/&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    init_db()
+    app.run(debug=True)">コピー</button></div><pre><code>import sqlite3
+from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+DB = "board.db"
+
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row   <span class="cm"># 列の名前で値を取り出せるようにする</span>
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+@app.route("/")
+def index():
+    with get_db() as conn:
+        posts = conn.execute("SELECT * FROM posts ORDER BY id DESC").fetchall()
+    return render_template("board.html", posts=posts)
+
+@app.route("/post", methods=["POST"])
+def post():
+    text = request.form["text"]
+    if text:
+        with get_db() as conn:   <span class="cm"># with を抜けるときに自動で確定（commit）される</span>
+            conn.execute("INSERT INTO posts (text) VALUES (?)", (text,))
+    return redirect("/")
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)</code></pre></div>
+<div class="code"><div class="code-h"><span>templates/board.html（Step 10 の &lt;ul&gt; 〜 &lt;/ul&gt; をこれに置き換える）</span><button class="copy" type="button" data-copy="&lt;ul&gt;
+  {% for p in posts %}
+    &lt;li&gt;{{ p[&quot;text&quot;] }}（{{ p[&quot;created_at&quot;] }}）&lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;">コピー</button></div><pre><code>&lt;ul&gt;
+  {% for p in posts %}
+    &lt;li&gt;{{ p["text"] }}（{{ p["created_at"] }}）&lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;</code></pre></div>
+<p>投稿してからサーバーを止め（<kbd>Ctrl</kbd> + <kbd>C</kbd>）、もう一度 <code>python app.py</code> で起動してみましょう。今度は投稿が残っています。フォルダに <code>board.db</code> というファイルができていて、そこにデータが入っています。</p>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>VS Code の拡張機能「SQLite Viewer」などを入れると、<code>board.db</code> の中身を表として見られます。データが本当に入っているか確かめてみましょう。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>created_at</code> の時刻は、世界標準時（UTC）で保存されます。日本時間より9時間遅れて見えるのはそのためです。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p><code>board.db</code> にはみんなの投稿が入っています。<code>.gitignore</code> に <code>*.db</code> を書いて、GitHub に上げないようにしましょう（第2回 Step 10）。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="12"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-13">次へ：データベースサーバーと NoSQL</a></div>
+</section>
+<section class="step" id="step-13" data-step="13" aria-labelledby="h-13">
+  <p class="step-no">Step 13<span>/ 15</span></p>
+  <h2 id="h-13">データベースサーバーと NoSQL</h2>
+  
+<p>SQLite は手軽ですが、データベースには大きく分けてほかの種類もあります。どれを選ぶかは、作るものの規模やデータの形で決まります。</p>
+<h3>SQLite とデータベースサーバーの違い</h3>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 215" role="img" aria-label="SQLiteとデータベースサーバーのつながり方の違い">
+<g data-s="1"><text class="t tb" x="180" y="18" text-anchor="middle">SQLite：同じ PC の中のファイル</text>
+<rect class="s sl dash" x="70" y="32" width="220" height="150" rx="10"/><text class="tm" x="180" y="198" text-anchor="middle">1台のサーバー（PC）</text>
+<use href="#i-server" x="96" y="70" width="56" height="64"/><text class="t mono" x="124" y="152" text-anchor="middle" style="font-size:12px">app.py</text>
+<path class="s" d="M158 102H206" marker-end="url(#ar)"/>
+<use href="#i-file" x="214" y="80" width="40" height="50"/><text class="t mono" x="234" y="152" text-anchor="middle" style="font-size:12px">board.db</text></g>
+<g data-s="2-3"><text class="t tb" x="180" y="18" text-anchor="middle">データベースサーバー：専用のサーバーにつなぐ</text>
+<g class="s"><path d="M248 74v64a40 9 0 0 0 80 0v-64"/><ellipse cx="288" cy="74" rx="40" ry="9" class="fy"/></g><text class="t tb" x="288" y="118" text-anchor="middle" style="font-size:12px">PostgreSQL</text><text class="tm" x="288" y="168" text-anchor="middle">DB サーバー</text>
+<use href="#i-server" x="20" y="34" width="44" height="50"/><text class="tm mono" x="42" y="98" text-anchor="middle">Web アプリ</text>
+<use href="#i-server" x="20" y="124" width="44" height="50"/><text class="tm mono" x="42" y="188" text-anchor="middle">分析ツール</text>
+<path class="s sp" d="M70 60L238 98" marker-end="url(#arp)"/><path class="s sp" d="M70 150L238 122" marker-end="url(#arp)"/>
+<text class="tm tp tb" x="150" y="66" text-anchor="middle">ネットワーク越し</text></g>
+<g data-s="3"><path class="s sp" d="M150 196L238 136" marker-end="url(#arp)"/><path class="s sp" d="M206 30L242 78" marker-end="url(#arp)"/><text class="t tb tp" x="132" y="212" text-anchor="middle">大勢が同時に読み書きしても大丈夫</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 3</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">つながり方の違い</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>SQLite：アプリと同じ PC にある1つのファイルを、直接読み書きする</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>データベースサーバー：専用のサーバーが動いていて、アプリはネットワーク越しにつなぐ</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>複数のアプリや大勢のユーザーが、同時に読み書きしても整合性が保たれる</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th></th><th>SQLite</th><th>データベースサーバー</th></tr></thead><tbody><tr><td data-label="">形</td><td data-label="SQLite">1つのファイル</td><td data-label="データベースサーバー">専用のサーバープログラムが動き続ける</td></tr><tr><td data-label="">準備</td><td data-label="SQLite">不要（Python に入っている）</td><td data-label="データベースサーバー">インストールと設定、ユーザーとパスワードの管理が必要</td></tr><tr><td data-label="">つなぎ方</td><td data-label="SQLite">同じ PC のプログラムから直接</td><td data-label="データベースサーバー">ネットワーク越しに、複数のアプリから</td></tr><tr><td data-label="">同時に書き込める数</td><td data-label="SQLite">1つずつ順番に</td><td data-label="データベースサーバー">大勢が同時に</td></tr><tr><td data-label="">向いているもの</td><td data-label="SQLite">学習、試作、小さなサイト、スマホアプリの中</td><td data-label="データベースサーバー">本格的な Web サービス、会社のシステム</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>SQLite は小さいながら、スマホの OS やブラウザの中など、身近なところで大量に使われています。「練習用のおもちゃ」ではなく、用途が違うだけです。</p></div></aside>
+<p>データベースサーバーにも SQL で命令します。有名なものを挙げます。</p>
+<div class="tbl stack"><table><thead><tr><th>名前</th><th>開発元</th><th>特徴</th><th>よく使われる場面</th></tr></thead><tbody><tr><td data-label="名前">PostgreSQL</td><td data-label="開発元">オープンソース</td><td data-label="特徴">高機能で正確。最近の Web サービスで特に人気</td><td data-label="よく使われる場面">Web サービス全般、研究データの管理</td></tr><tr><td data-label="名前">MySQL</td><td data-label="開発元">オープンソース（Oracle 社が開発を主導）</td><td data-label="特徴">長く Web の定番。情報が多い</td><td data-label="よく使われる場面">WordPress などのサイト、Web サービス</td></tr><tr><td data-label="名前">Microsoft SQL Server</td><td data-label="開発元">Microsoft</td><td data-label="特徴">Windows や Excel など Microsoft 製品との連携が得意</td><td data-label="よく使われる場面">企業の業務システム</td></tr><tr><td data-label="名前">Oracle Database</td><td data-label="開発元">Oracle</td><td data-label="特徴">大規模でも止まらない信頼性</td><td data-label="よく使われる場面">銀行、官公庁などの基幹システム</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>「SQL サーバー」という言葉は、データベースサーバー全般を指すこともあれば、Microsoft の製品名「SQL Server」を指すこともあります。文脈で見分けましょう。</p></div></aside>
+<h3>NoSQL：表を使わないデータベース</h3>
+<p>ここまでのような表で管理するデータベースを <dfn>RDB</dfn>（リレーショナルデータベース）といいます。これに対して、表以外の形でデータを持つデータベースをまとめて <dfn>NoSQL</dfn>（ノーエスキューエル）と呼びます。</p>
+<div class="tbl stack"><table><thead><tr><th>種類</th><th>データの形</th><th>代表例</th><th>得意なこと</th></tr></thead><tbody><tr><td data-label="種類">ドキュメント型</td><td data-label="データの形">JSON のような、入れ子にできる文書</td><td data-label="代表例">MongoDB、Firestore</td><td data-label="得意なこと">項目が投稿ごとにバラバラなデータ</td></tr><tr><td data-label="種類">キーバリュー型</td><td data-label="データの形">「名前 → 値」の組</td><td data-label="代表例">Redis</td><td data-label="得意なこと">とても速い読み書き。セッションや一時的な保存</td></tr><tr><td data-label="種類">ワイドカラム型</td><td data-label="データの形">行ごとに列の数が変わる巨大な表</td><td data-label="代表例">Cassandra</td><td data-label="得意なこと">世界中に分散した大量のデータ</td></tr><tr><td data-label="種類">グラフ型</td><td data-label="データの形">点と線のつながり</td><td data-label="代表例">Neo4j</td><td data-label="得意なこと">友達の友達、おすすめなどの関係</td></tr></tbody></table></div>
+<div class="tbl stack"><table><thead><tr><th></th><th>RDB（SQL）</th><th>NoSQL</th></tr></thead><tbody><tr><td data-label="">データの形</td><td data-label="RDB（SQL）">決まった形の表</td><td data-label="NoSQL">柔軟。あとから項目を増やしやすい</td></tr><tr><td data-label="">得意</td><td data-label="RDB（SQL）">正確さ、複雑な検索や集計</td><td data-label="NoSQL">大量のデータ、速さ、形がそろわないデータ</td></tr><tr><td data-label="">向いている例</td><td data-label="RDB（SQL）">銀行の残高、在庫、会員情報、成績</td><td data-label="NoSQL">SNS のタイムライン、チャット、アクセスの記録</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>迷ったら、まずは RDB（SQLite や PostgreSQL）を選ぶのが定番です。実際のサービスでは、会員情報は PostgreSQL、セッションは Redis のように組み合わせて使うことも多くあります。第1回の Security 2 で出てきた「セッション表」も、Redis に置かれることがよくあります。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">項目が投稿ごとにバラバラで、あとから形を変えやすいデータを保存したい。向いているのは？</p><div class="opts"><button class="opt" type="button">ドキュメント型の NoSQL（MongoDB など）</button><button class="opt" type="button">Excel ファイル</button><button class="opt" type="button">グラフ型だけ</button></div><p class="fb">ドキュメント型は、JSON のような柔軟な形のデータが得意です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="13"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-14">次へ：インターネットに公開するには</a></div>
+</section>
+<section class="step" id="step-14" data-step="14" aria-labelledby="h-14">
+  <p class="step-no">Step 14<span>/ 15</span></p>
+  <h2 id="h-14">インターネットに公開するには</h2>
+  
+<p><code>127.0.0.1</code> で動いているサイトは、自分の PC からしか見られません。ほかの人に見てもらうには、インターネットにつながったサーバーで Python を動かす必要があります。</p>
+<div class="tbl stack"><table><thead><tr><th></th><th>静的なサイト</th><th>Python を使うサイト</th></tr></thead><tbody><tr><td data-label="">中身</td><td data-label="静的なサイト">HTML・CSS・JS のファイルだけ</td><td data-label="Python を使うサイト">サーバーで Python が動く</td></tr><tr><td data-label="">公開先の例</td><td data-label="静的なサイト">GitHub Pages（第2回）</td><td data-label="Python を使うサイト">Render、PythonAnywhere、Google Cloud Run、AWS など</td></tr><tr><td data-label="">できること</td><td data-label="静的なサイト">同じページを見せる</td><td data-label="Python を使うサイト">投稿・ログイン・データの保存</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>GitHub Pages では Python は動きません。置けるのは HTML・CSS・JS などの静的なファイルだけです。</p></div></aside>
+<p>公開の準備として、使っているライブラリの一覧を書き出しておきます。公開先のサーバーは、このファイルを見て同じライブラリを入れます。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> pip freeze &gt; requirements.txt      <span class="cm"># 使っているライブラリを書き出す</span></code></pre></div>
+<div class="tbl"><table><thead><tr><th>公開前のチェック</th><th>理由</th></tr></thead><tbody><tr><td><code>debug=True</code> を外す</td><td>エラーの詳細が他人に見えてしまうため</td></tr><tr><td>パスワードやキーはコードに書かず、環境変数や <code>.env</code> に置く</td><td>第2回 Step 10 のとおり、GitHub に上がると危険なため</td></tr><tr><td><code>.gitignore</code> に <code>venv/</code> を入れる</td><td>仮想環境は人によって違い、容量も大きいため</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>公開サービスの料金や無料の範囲は変わることがあります。使う前に、各サービスの最新の案内を確認してください。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="14"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-15">次へ：ほかの言語でも作れる</a></div>
+</section><div class="part" id="part-5"><p>Part 5</p><h2>ほかの言語でも作れる</h2><p class="part-d">同じしくみを、ほかの言語ではどう書くのかを見てみます。</p></div>
+<section class="step" id="step-15" data-step="15" aria-labelledby="h-15">
+  <p class="step-no">Step 15<span>/ 15</span></p>
+  <h2 id="h-15">ほかの言語でも作れる</h2>
+  
+<p>ここまで Python で作ってきましたが、Web サイトのバックエンドはほかの言語でも作れます。どの言語でも、<strong>リクエストを受け取って、レスポンスを返す</strong>という仕組みは同じです。タブを切り替えて、同じ「こんにちは」を返すコードを見比べてみましょう。</p>
+<div class="tabs" data-tabs><div class="tablist" role="tablist" aria-label="言語"><button type="button" role="tab" id="tab-0" aria-controls="panel-0">Python（Flask）</button><button type="button" role="tab" id="tab-1" aria-controls="panel-1">JavaScript（Express）</button><button type="button" role="tab" id="tab-2" aria-controls="panel-2">PHP</button><button type="button" role="tab" id="tab-3" aria-controls="panel-3">Ruby（Sinatra）</button><button type="button" role="tab" id="tab-4" aria-controls="panel-4">Go</button><button type="button" role="tab" id="tab-5" aria-controls="panel-5">Java（Spring Boot）</button></div><div role="tabpanel" id="panel-0" aria-labelledby="tab-0"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "&lt;h1&gt;こんにちは&lt;/h1&gt;"
+
+app.run()</code></pre></div><p class="run">起動の例：<code>python app.py</code></p></div><div role="tabpanel" id="panel-1" aria-labelledby="tab-1"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>const express = require("express");
+const app = express();
+
+app.get("/", (req, res) =&gt; {
+  res.send("&lt;h1&gt;こんにちは&lt;/h1&gt;");
+});
+
+app.listen(3000);</code></pre></div><p class="run">起動の例：<code>node app.js</code></p></div><div role="tabpanel" id="panel-2" aria-labelledby="tab-2"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>&lt;?php
+// index.php
+echo "&lt;h1&gt;こんにちは&lt;/h1&gt;";</code></pre></div><p class="run">起動の例：<code>php -S localhost:8000</code></p></div><div role="tabpanel" id="panel-3" aria-labelledby="tab-3"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>require "sinatra"
+
+get "/" do
+  "&lt;h1&gt;こんにちは&lt;/h1&gt;"
+end</code></pre></div><p class="run">起動の例：<code>gem install sinatra rackup puma</code> のあと <code>ruby app.rb</code></p></div><div role="tabpanel" id="panel-4" aria-labelledby="tab-4"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "&lt;h1&gt;こんにちは&lt;/h1&gt;")
+	})
+	http.ListenAndServe(":8080", nil)
+}</code></pre></div><p class="run">起動の例：<code>go run main.go</code></p></div><div role="tabpanel" id="panel-5" aria-labelledby="tab-5"><div class="code"><div class="code-h"><span>同じ「こんにちは」を返すサーバー</span></div><pre><code>@RestController
+public class HelloController {
+
+    @GetMapping("/")
+    public String index() {
+        return "&lt;h1&gt;こんにちは&lt;/h1&gt;";
+    }
+}</code></pre></div><p class="run">起動の例：<code>./mvnw spring-boot:run</code></p></div></div>
+<div class="tbl stack"><table><thead><tr><th>言語</th><th>代表的なフレームワーク</th><th>特徴</th><th>よく使われる場面</th></tr></thead><tbody><tr><td data-label="言語">Python</td><td data-label="代表的なフレームワーク">Django, Flask, FastAPI</td><td data-label="特徴">読みやすい。AI・データ分析と相性がよい</td><td data-label="よく使われる場面">AI を使ったサービス、研究用のツール</td></tr><tr><td data-label="言語">JavaScript / TypeScript</td><td data-label="代表的なフレームワーク">Express, Next.js</td><td data-label="特徴">フロントと同じ言語で書ける</td><td data-label="よく使われる場面">Web サービス全般</td></tr><tr><td data-label="言語">PHP</td><td data-label="代表的なフレームワーク">Laravel, WordPress</td><td data-label="特徴">レンタルサーバーで動かしやすい</td><td data-label="よく使われる場面">ブログ、企業や お店のサイト</td></tr><tr><td data-label="言語">Ruby</td><td data-label="代表的なフレームワーク">Ruby on Rails</td><td data-label="特徴">少ないコードで素早く作れる。日本生まれの言語</td><td data-label="よく使われる場面">スタートアップのサービス</td></tr><tr><td data-label="言語">Go</td><td data-label="代表的なフレームワーク">標準ライブラリ, Gin</td><td data-label="特徴">動作が速く、同時に大量の処理をさばける</td><td data-label="よく使われる場面">アクセスの多い API、インフラの道具</td></tr><tr><td data-label="言語">Java</td><td data-label="代表的なフレームワーク">Spring Boot</td><td data-label="特徴">大規模でも安定して動かせる</td><td data-label="よく使われる場面">銀行や企業の基幹システム</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>1つの言語でしくみを理解すれば、ほかの言語も「どこが URL の対応表で、どこが返す内容か」を手がかりに読めるようになります。まずは Python で1つ作りきることを目指しましょう。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">どの言語で書いても共通している、Web サーバーの基本の仕事は？</p><div class="opts"><button class="opt" type="button">リクエストを受け取って、レスポンスを返す</button><button class="opt" type="button">CSS で色を付ける</button><button class="opt" type="button">Git で履歴を残す</button></div><p class="fb">言語が違っても、Web のしくみ（第1回）は同じです。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="15"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="16" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：自分の手で動かしてみる</h2>
+  <p>演習1〜2でフロント側、演習3〜4で Python のサーバー側を作ります。</p>
+
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">演習 1</span><h3>Python で計算してみる</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>ファイルに書いた Python を実行する</dd></div><div><dt>使うもの</dt><dd>ターミナル、テキストエディター</dd></div><div><dt>関係する段階</dt><dd>Step 1・2</dd></div></dl>
+    <ol class="steps">
+      <li><code>hello.py</code> を作り、自分の名前を変数に入れて表示する</li>
+      <li>1 から 10 までの合計を <code>for</code> で計算して表示する</li>
+      <li><code>python3 hello.py</code> で実行する</li>
+    </ol>
+    <details><summary>ヒント</summary><div class="code"><div class="code-h"><span>合計の計算</span></div><pre><code>total = 0
+for n in range(1, 11):
+    total = total + n
+print(total)   <span class="cm"># 55 と表示される</span></code></pre></div></details>
+  </div>
+
+  <div class="exercise" id="ex-2">
+    <div class="ex-h"><span class="ex-tag">演習 2</span><h3>自己紹介ページに動きをつける</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>HTML・CSS・JS の3つのファイルをつなげる</dd></div><div><dt>使うもの</dt><dd>第2回で作った my-site</dd></div><div><dt>関係する段階</dt><dd>Step 4〜6</dd></div></dl>
+    <ol class="steps">
+      <li><code>index.html</code> にボタンを追加し、<code>style.css</code> と <code>script.js</code> を読み込む</li>
+      <li>Step 5・6 のコードを参考に、色とボタンの動きをつける</li>
+      <li>ブラウザで開いて確かめたら、commit・push して GitHub Pages に反映する</li>
+    </ol>
+    <aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>動かないときは、開発者ツールの「Console」タブを見ましょう。JavaScript のエラーが赤く表示されます。</p></div></aside>
+  </div>
+
+  <div class="exercise" id="ex-3">
+    <div class="ex-h"><span class="ex-tag">演習 3</span><h3>Flask でおみくじサイトを作る</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>開くたびに結果が変わる、動的なページを作る</dd></div><div><dt>使うもの</dt><dd>Flask</dd></div><div><dt>関係する段階</dt><dd>Step 3・7・8</dd></div></dl>
+    <div class="code"><div class="code-h"><span>app.py</span><button class="copy" type="button" data-copy="import random
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route(&quot;/&quot;)
+def omikuji():
+    result = random.choice([&quot;大吉&quot;, &quot;中吉&quot;, &quot;小吉&quot;, &quot;凶&quot;])
+    return f&quot;&lt;h1&gt;今日の運勢：{result}&lt;/h1&gt;&quot;
+
+if __name__ == &quot;__main__&quot;:
+    app.run(debug=True)">コピー</button></div><pre><code>import random
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def omikuji():
+    result = random.choice(["大吉", "中吉", "小吉", "凶"])
+    return f"&lt;h1&gt;今日の運勢：{result}&lt;/h1&gt;"
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre></div>
+    <ol class="steps">
+      <li><code>presemi/python</code> の中に <code>omikuji</code> フォルダを作って <code>app.py</code> を置き、<code>python app.py</code> で起動して <code>http://127.0.0.1:5000</code> を開く</li>
+      <li>何回か再読み込みして、結果が変わることを確かめる</li>
+      <li>結果に合わせて、ひとことメッセージも表示するよう改造する</li>
+    </ol>
+    <details><summary>考えてみよう</summary><p>このページを GitHub Pages に置いても、おみくじは動きません。なぜでしょうか。（答え：GitHub Pages は静的なファイルを返すだけで、Python が動かないから。Step 14）</p></details>
+  </div>
+
+  <div class="exercise" id="ex-4">
+    <div class="ex-h"><span class="ex-tag">演習 4</span><h3>投稿が消えない掲示板を作って GitHub に置く</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>テンプレート・フォーム・SQLite を使い、Git で管理する</dd></div><div><dt>使うもの</dt><dd>Flask、Git、GitHub</dd></div><div><dt>関係する段階</dt><dd>Step 9〜14</dd></div></dl>
+    <ol class="steps">
+      <li>Step 9 のフォルダ構成で、Step 12 の SQLite 版の掲示板を作る</li>
+      <li>投稿してからサーバーを止め、もう一度起動しても投稿が残っていることを確かめる</li>
+      <li><code>&lt;b&gt;テスト&lt;/b&gt;</code> と投稿し、文字のまま表示されることを確かめる</li>
+      <li>CSS で見た目を整える</li>
+      <li>下の <code>.gitignore</code> を作り、<code>requirements.txt</code> も書き出してから、commit・push する</li>
+    </ol>
+    <div class="code"><div class="code-h"><span>.gitignore</span><button class="copy" type="button" data-copy="venv/
+__pycache__/
+.env
+*.db        # データベースのファイル（投稿の中身）は上げない">コピー</button></div><pre><code>venv/
+__pycache__/
+.env
+*.db        <span class="cm"># データベースのファイル（投稿の中身）は上げない</span></code></pre></div>
+  </div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="16"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：用語の早見表</h2>
+  <div class="tbl stack"><table><thead><tr><th>用語</th><th>ひとことで</th><th>段階</th></tr></thead><tbody><tr><td data-label="用語">変数 / 関数</td><td data-label="ひとことで">値を入れる箱 / 処理に名前をつけたもの</td><td data-label="段階"><a href="#step-2">2</a></td></tr><tr><td data-label="用語">インデント</td><td data-label="ひとことで">行頭の空白。Python ではまとまりを表す</td><td data-label="段階"><a href="#step-2">2</a></td></tr><tr><td data-label="用語">ライブラリ / pip</td><td data-label="ひとことで">道具箱 / 道具箱を入れるコマンド</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">仮想環境（venv）</td><td data-label="ひとことで">プロジェクトごとの専用の道具箱</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">フレームワーク</td><td data-label="ひとことで">Web サイト作りの土台（Flask、Django など）</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">HTML / CSS / JavaScript</td><td data-label="ひとことで">骨組み / 見た目 / 動き</td><td data-label="段階"><a href="#step-4">4</a>〜<a href="#step-6">6</a></td></tr><tr><td data-label="用語">フロントエンド / バックエンド</td><td data-label="ひとことで">ブラウザ側 / サーバー側</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">ルーティング</td><td data-label="ひとことで">URL と関数の対応表</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">localhost（127.0.0.1）</td><td data-label="ひとことで">自分自身の PC</td><td data-label="段階"><a href="#step-8">8</a></td></tr><tr><td data-label="用語">エスケープ</td><td data-label="ひとことで">入力を「ただの文字」として扱う安全対策</td><td data-label="段階"><a href="#step-8">8</a></td></tr><tr><td data-label="用語">テンプレート（Jinja2）</td><td data-label="ひとことで">穴あきの HTML</td><td data-label="段階"><a href="#step-9">9</a></td></tr><tr><td data-label="用語">フォーム / POST</td><td data-label="ひとことで">入力欄 / 入力をサーバーへ送る方法</td><td data-label="段階"><a href="#step-10">10</a></td></tr><tr><td data-label="用語">データベース / テーブル</td><td data-label="ひとことで">データの保管庫 / その中の表</td><td data-label="段階"><a href="#step-11">11</a></td></tr><tr><td data-label="用語">SQL</td><td data-label="ひとことで">データベースに命令する言語（SELECT、INSERT など）</td><td data-label="段階"><a href="#step-11">11</a></td></tr><tr><td data-label="用語">SQL インジェクション</td><td data-label="ひとことで">入力で SQL を書き換える攻撃。? で防ぐ</td><td data-label="段階"><a href="#step-11">11</a></td></tr><tr><td data-label="用語">RDB / NoSQL</td><td data-label="ひとことで">表で管理するデータベース / 表以外の形で管理するデータベース</td><td data-label="段階"><a href="#step-13">13</a></td></tr><tr><td data-label="用語">requirements.txt</td><td data-label="ひとことで">使っているライブラリの一覧</td><td data-label="段階"><a href="#step-14">14</a></td></tr></tbody></table></div>
+  <aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>シリーズのまとめ</p><div><p>3回のレッスンで、<a href="01-web.html">Web のしくみ</a>を知り、<a href="02-git.html">Git で記録して GitHub で共有</a>し、Python で Web サイトを作るところまで来ました。これで、研究用のシステムを作るための道具がひととおりそろいました。次の第4回で、実際に研究データを集めるシステムを作ります。</p></div></aside>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="02-git.html"><small>前のレッスン</small>第2回 Git と GitHub</a>
+    <a class="pg next-l" href="04-research-system.html"><small>次のレッスン</small>第4回 研究データを集めるシステム</a>
+  </nav>
+</section>
+
+  </article>
+
+  <aside class="toc" aria-label="このページの内容">
+    <p>このページの内容</p>
+    <ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">Python とは</a></li><li><a href="#step-2" data-toc="step-2">基本の書き方</a></li><li><a href="#step-3" data-toc="step-3">ライブラリ</a></li><li><a href="#step-4" data-toc="step-4">HTML</a></li><li><a href="#step-5" data-toc="step-5">CSS</a></li><li><a href="#step-6" data-toc="step-6">JavaScript</a></li><li><a href="#step-7" data-toc="step-7">しくみ</a></li><li><a href="#step-8" data-toc="step-8">Flask で最初のページ</a></li><li><a href="#step-9" data-toc="step-9">テンプレート</a></li><li><a href="#step-10" data-toc="step-10">フォーム</a></li><li><a href="#step-11" data-toc="step-11">データベースと SQL</a></li><li><a href="#step-12" data-toc="step-12">SQLite で保存</a></li><li><a href="#step-13" data-toc="step-13">DB サーバーと NoSQL</a></li><li><a href="#step-14" data-toc="step-14">公開するには</a></li><li><a href="#step-15" data-toc="step-15">ほかの言語</a></li><li><a href="#exercise" data-toc="exercise">演習</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul>
+  </aside>
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-python-progress",TOTAL=16,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="16"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+
+  /* 表示結果のデモ */
+  document.querySelectorAll(".demo").forEach(function(d){
+    var page=d.querySelector(".demo-page"),t=d.querySelector("[data-css-toggle]"),like=d.querySelector(".like"),n=0;
+    if(t)t.addEventListener("click",function(){var on=page.classList.toggle("styled");t.textContent=on?"CSS を外す":"CSS を当てる";t.setAttribute("aria-pressed",on)});
+    if(like&&page.dataset.js==="on")like.addEventListener("click",function(){n++;like.textContent="いいね "+n});
+    var a=d.querySelector(".demo-page a");if(a)a.addEventListener("click",function(e){e.preventDefault()});
+  });
+  /* 言語タブ */
+  document.querySelectorAll("[data-tabs]").forEach(function(box){
+    var tabs=[].slice.call(box.querySelectorAll("[role=tab]")),panels=[].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function sel(i){tabs.forEach(function(t,k){t.setAttribute("aria-selected",k===i);t.tabIndex=k===i?0:-1});panels.forEach(function(p,k){p.hidden=k!==i})}
+    tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(i)});t.addEventListener("keydown",function(e){if(e.key==="ArrowRight"){sel((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}if(e.key==="ArrowLeft"){var k=(i-1+tabs.length)%tabs.length;sel(k);tabs[k].focus()}})});
+    sel(0);
+  });
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

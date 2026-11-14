@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>研究データ収集システム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+.code.out .code-h{background:var(--surface)}
+.code.out pre{background:var(--bg)}
+.demo{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.demo-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub)}
+.demo-page{background:#fff;color:#000;font-family:"Times New Roman",Times,"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.35;padding:6px 18px 18px;letter-spacing:0}
+.demo-page h1{font-size:2em;font-weight:bold;margin:.5em 0;line-height:1.2}
+.demo-page p{margin:1em 0;max-width:none}
+.demo-page ul{margin:1em 0;padding-left:40px}
+.demo-page a{color:#0000EE;text-decoration:underline}
+.demo-page button{font:13px system-ui,sans-serif;padding:1px 8px;border:1px solid #767676;border-radius:3px;background:#efefef;color:#000;cursor:pointer;margin-left:6px}
+.demo-page.styled{font-family:var(--font);background:#fff;padding:22px 28px 26px}
+.demo-page.styled h1{color:#2453d4;font-size:1.6em}
+.demo-page.styled p,.demo-page.styled li{color:#333;line-height:1.8}
+.demo-page.styled a{color:#2453d4}
+.demo-page.styled button{padding:8px 18px;border:0;border-radius:6px;background:#2453d4;color:#fff;font-weight:500;font-size:14px}
+.tabs{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tablist{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg)}
+.tablist button{font:inherit;font-size:.84rem;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--sub);cursor:pointer;white-space:nowrap}
+.tablist button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tabs [role=tabpanel] .code{border:0;border-radius:0}
+.tabs .run{font-size:.8rem;color:var(--sub);padding:8px 16px;border-top:1px solid var(--border)}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.7}
+
+.sheet{border:1px solid var(--border);border-radius:10px;padding:4px 0}
+.sheet dl{margin:0} .sheet div{display:grid;grid-template-columns:9em 1fr;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.sheet div:last-child{border-bottom:0} .sheet dt{font-weight:700;font-size:.88rem} .sheet dd{margin:0;font-size:.92rem}
+@media (max-width:560px){.sheet div{grid-template-columns:1fr;gap:2px}}
+.stage-map{display:grid;gap:6px}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン"><a href="index.html">研究の流れ</a><a href="00-setup.html">00 準備</a><a href="01-web.html">01 Webのしくみ</a><a href="02-git.html">02 Git と GitHub</a><a href="03-python.html">03 Python で Web</a><a href="#top" aria-current="page">04 データ収集システム</a><a href="05-report.html">05 レポートの書き方</a></nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このページの進み具合</span><b class="pcount">0 / 13</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">04 研究データを集めるシステム</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">設計</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>集めるデータを決める</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>テーブル設計</a></li><li class="nav-h">倫理と個人情報</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>説明と同意</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>個人情報を守る</a></li><li class="nav-h">システム</li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>記録フォーム</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>入力ミス・記録漏れ</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>管理者ページ</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>公開と運用</a></li><li class="nav-h">分析</li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>CSV に書き出す</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>pandas で集計</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>グラフにする</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>考察につなげる</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第4回</span><span>研究データを集めるシステム</span></p>
+    <h1>研究データを集めるシステムを作る</h1>
+    <p class="desc">これまでの4回で学んだ Web・Git・Python・データベースを組み合わせて、研究用の記録システムを作ります。何を記録するかの設計から、倫理と個人情報、運用、そして集めたデータの分析までを1本の流れで扱います。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約150分（2〜3回に分けるのがおすすめ）</dd></div><div><dt>レベル</dt><dd>入門〜初級</dd></div><div><dt>前提知識</dt><dd>研究の流れ、第0回〜第3回</dd></div></dl>
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 13</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">設計</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>集めるデータを決める</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>テーブル設計</a></li><li class="nav-h">倫理と個人情報</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>説明と同意</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>個人情報を守る</a></li><li class="nav-h">システム</li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>記録フォーム</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>入力ミス・記録漏れ</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>管理者ページ</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>公開と運用</a></li><li class="nav-h">分析</li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>CSV に書き出す</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>pandas で集計</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>グラフにする</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>考察につなげる</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習</a></li></ul></details>
+    <section class="goals" aria-labelledby="goals-h"><h2 id="goals-h">このページで学ぶこと</h2><ul><li>リサーチクエスチョンから、記録する項目とテーブルを設計できる</li><li>説明と同意、個人情報の守り方を説明できる</li><li>入力チェックと管理者ページのある記録システムを作れる</li><li>集めたデータを CSV に書き出し、pandas で集計してグラフにできる</li></ul></section>
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>このレッスンでは、<a href="index.html">研究の流れ</a>の4〜6（データ収集の準備・データを集める・分析する）を、1つのシステムでつなげます。第0回〜第3回で学んだことを、すべて使います。</p>
+<div class="tbl stack"><table><thead><tr><th>Part</th><th>研究の段階</th><th>やること</th><th>使う資料</th></tr></thead><tbody><tr><td data-label="Part">1</td><td data-label="研究の段階">データ収集の準備</td><td data-label="やること">問いから項目とテーブルを決める</td><td data-label="使う資料"><a href="03-python.html">第3回</a> SQL</td></tr><tr><td data-label="Part">2</td><td data-label="研究の段階">データ収集の準備</td><td data-label="やること">説明と同意、個人情報の守り方</td><td data-label="使う資料"><a href="01-web.html">第1回</a> セキュリティ、<a href="02-git.html">第2回</a> .gitignore</td></tr><tr><td data-label="Part">3</td><td data-label="研究の段階">データを集める</td><td data-label="やること">記録フォーム、チェック、管理者ページ、運用</td><td data-label="使う資料"><a href="03-python.html">第3回</a> Flask・SQLite</td></tr><tr><td data-label="Part">4</td><td data-label="研究の段階">分析する</td><td data-label="やること">CSV、pandas、グラフ、検定</td><td data-label="使う資料">第3回 Step 3 のライブラリ</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>このページでは、「計算練習アプリで、2週間の練習で計算が速くなるか」という例を使います。自分の研究に置き換えながら読んでください。</p></div></aside>
+    </section>
+    <div class="part" id="part-1"><p>Part 1</p><h2>データを設計する</h2><p class="part-d">研究の問いから、何を・どんな形で記録するかを決めます。</p></div>
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 12</span></p>
+  <h2 id="h-1">問いから、集めるデータを決める</h2>
+  
+<p>システムを作る前に、<strong>何を記録すればリサーチクエスチョンに答えられるか</strong>を決めます。ここがあいまいなまま作り始めると、集め終わってから「あの項目も取っておけばよかった」となり、やり直しがききません。</p>
+<p>このページでは、<a href="index.html">研究の流れ</a>で使った例を続けます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 226" role="img" aria-label="リサーチクエスチョンから記録項目とテーブルを決める流れ">
+<rect class="s fc" x="6" y="8" width="348" height="40" rx="6"/><text class="t tb" x="16" y="33" style="font-size:12px">RQ：2週間の練習で、1問あたりの時間は短くなるか</text>
+<rect class="s sp" x="4" y="6" width="352" height="44" rx="8" style="stroke-width:3" data-s="1"/>
+<g data-s="2-4"><path class="s" d="M180 50V60" /><rect class="s fc" x="6" y="62" width="168" height="52" rx="6"/><text class="tm tb" x="16" y="80">変えるもの・条件</text><text class="t" x="16" y="102" style="font-size:12px">練習した日数（何日目か）</text>
+<rect class="s fc" x="186" y="62" width="168" height="52" rx="6"/><text class="tm tb" x="196" y="80">測るもの</text><text class="t" x="196" y="102" style="font-size:12px">時間・正答数・問題数</text></g>
+<g data-s="3-4"><rect class="s fy" x="7" y="132" width="60" height="24" rx="12"/><text class="t" x="37.0" y="148" text-anchor="middle" style="font-size:10.5px">参加者ID</text><rect class="s fy" x="71" y="132" width="48" height="24" rx="12"/><text class="t" x="95.0" y="148" text-anchor="middle" style="font-size:10.5px">何日目</text><rect class="s fy" x="123" y="132" width="48" height="24" rx="12"/><text class="t" x="147.0" y="148" text-anchor="middle" style="font-size:10.5px">問題数</text><rect class="s fy" x="175" y="132" width="48" height="24" rx="12"/><text class="t" x="199.0" y="148" text-anchor="middle" style="font-size:10.5px">正答数</text><rect class="s fy" x="227" y="132" width="58" height="24" rx="12"/><text class="t" x="256.0" y="148" text-anchor="middle" style="font-size:10.5px">時間（秒）</text><rect class="s fy" x="289" y="132" width="62" height="24" rx="12"/><text class="t" x="320.0" y="148" text-anchor="middle" style="font-size:10.5px">難しさ 1〜5</text><text class="tm" x="6" y="126">記録する項目（＋念のため、難しさの感じ方も）</text></g>
+<g data-s="4"><rect class="s fs thin" x="6" y="176" width="78" height="22"/><text class="t mono tb" x="10" y="191" style="font-size:9.5px">participant_id</text><rect class="s fs thin" x="84" y="176" width="40" height="22"/><text class="t mono tb" x="88" y="191" style="font-size:9.5px">day</text><rect class="s fs thin" x="124" y="176" width="48" height="22"/><text class="t mono tb" x="128" y="191" style="font-size:9.5px">total</text><rect class="s fs thin" x="172" y="176" width="56" height="22"/><text class="t mono tb" x="176" y="191" style="font-size:9.5px">correct</text><rect class="s fs thin" x="228" y="176" width="62" height="22"/><text class="t mono tb" x="232" y="191" style="font-size:9.5px">seconds</text><rect class="s fs thin" x="290" y="176" width="64" height="22"/><text class="t mono tb" x="294" y="191" style="font-size:9.5px">difficulty</text><rect class="s fc thin" x="6" y="198" width="78" height="22"/><text class="t mono" x="10" y="213" style="font-size:10.5px">P01</text><rect class="s fc thin" x="84" y="198" width="40" height="22"/><text class="t mono" x="88" y="213" style="font-size:10.5px">1</text><rect class="s fc thin" x="124" y="198" width="48" height="22"/><text class="t mono" x="128" y="213" style="font-size:10.5px">20</text><rect class="s fc thin" x="172" y="198" width="56" height="22"/><text class="t mono" x="176" y="213" style="font-size:10.5px">16</text><rect class="s fc thin" x="228" y="198" width="62" height="22"/><text class="t mono" x="232" y="213" style="font-size:10.5px">82.4</text><rect class="s fc thin" x="290" y="198" width="64" height="22"/><text class="t mono" x="294" y="213" style="font-size:10.5px">3</text><text class="tm" x="354" y="170" text-anchor="end">records テーブル（1行＝1回の記録）</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">問いからテーブルへ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>まず、リサーチクエスチョンを1文で書く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>「変えるもの（条件）」と「測るもの」に分ける</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>測るために必要な項目を書き出す。あとで計算できるものは、元の数字を記録する</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>項目をテーブルの列にする。1回の記録が1行になる</span></button></li></ol>
+</div>
+<div class="tbl"><table><thead><tr><th>決めること</th><th>例</th></tr></thead><tbody><tr><td>誰から</td><td>大学生 10人</td></tr><tr><td>いつ・何回</td><td>14日間、1日1回</td></tr><tr><td>どうやって</td><td>参加者が自分のスマホから記録フォームに入力</td></tr><tr><td>何を</td><td>参加者ID、何日目、問題数、正答数、かかった時間、難しさの感じ方</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p><strong>計算で出せるものは、元の数字を記録する</strong>のが基本です。「正答率 80%」ではなく「20問中16問」を記録しておけば、あとから正答率も誤答数も計算できます。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>「念のため」と項目を増やしすぎると、参加者の負担が増えて記録漏れの原因になります。問いに必要なものを中心に、多くても1回1〜2分で入力できる量にしましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：テーブルを設計する</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 12</span></p>
+  <h2 id="h-2">テーブルを設計する</h2>
+  
+<p>決めた項目を、データベースのテーブルにします。<strong>参加者の表</strong>と<strong>記録の表</strong>に分けるのがポイントです。</p>
+<div class="code"><div class="code-h"><span>schema.sql</span><button class="copy" type="button" data-copy="-- 参加者（名前は入れない）
+CREATE TABLE IF NOT EXISTS participants (
+    participant_id TEXT PRIMARY KEY,      -- 例：P01
+    consented_at   TEXT NOT NULL          -- 同意した日
+);
+
+-- 毎回の記録（1回の練習 = 1行）
+CREATE TABLE IF NOT EXISTS records (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    participant_id TEXT    NOT NULL REFERENCES participants(participant_id),
+    day            INTEGER NOT NULL,      -- 何日目か（1〜14）
+    total          INTEGER NOT NULL,      -- 問題数
+    correct        INTEGER NOT NULL,      -- 正答数
+    seconds        REAL    NOT NULL,      -- かかった時間（秒）
+    difficulty     INTEGER,               -- 難しさ 1〜5
+    created_at     TEXT DEFAULT CURRENT_TIMESTAMP
+);">コピー</button></div><pre><code><span class="cm">-- 参加者（名前は入れない）</span>
+CREATE TABLE IF NOT EXISTS participants (
+    participant_id TEXT PRIMARY KEY,      <span class="cm">-- 例：P01</span>
+    consented_at   TEXT NOT NULL          <span class="cm">-- 同意した日</span>
+);
+
+<span class="cm">-- 毎回の記録（1回の練習 = 1行）</span>
+CREATE TABLE IF NOT EXISTS records (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    participant_id TEXT    NOT NULL REFERENCES participants(participant_id),
+    day            INTEGER NOT NULL,      <span class="cm">-- 何日目か（1〜14）</span>
+    total          INTEGER NOT NULL,      <span class="cm">-- 問題数</span>
+    correct        INTEGER NOT NULL,      <span class="cm">-- 正答数</span>
+    seconds        REAL    NOT NULL,      <span class="cm">-- かかった時間（秒）</span>
+    difficulty     INTEGER,               <span class="cm">-- 難しさ 1〜5</span>
+    created_at     TEXT DEFAULT CURRENT_TIMESTAMP
+);</code></pre></div>
+<div class="tbl"><table><thead><tr><th>設計のコツ</th><th>理由</th></tr></thead><tbody><tr><td>1行 = 1回の記録にする</td><td>14日分を1行に横並びにすると、集計しにくく、日数を変えられない</td></tr><tr><td>名前ではなく ID で記録する</td><td>記録の表だけを見ても、誰のデータかわからないようにする（Step 4）</td></tr><tr><td>数値は数値の型で保存する</td><td><code>INTEGER</code>・<code>REAL</code> にしておけば、そのまま計算できる</td></tr><tr><td>記録した日時を自動で残す</td><td>あとから「いつ入力されたか」を確かめられる</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>この「1行が1件の観測」という形は、分析の世界では<dfn>整然データ</dfn>（tidy data）と呼ばれ、pandas や統計ソフトでそのまま扱える形です。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">14日間の記録を保存するテーブルとして、分析しやすいのはどれ？</p><div class="opts"><button class="opt" type="button">1人1行で、day1〜day14 の列を横に並べる</button><button class="opt" type="button">1回の記録を1行にして、何日目かを列に入れる</button><button class="opt" type="button">日ごとに別のテーブルを作る</button></div><p class="fb">1行＝1回の記録にすると、日数が変わっても同じ形で集計できます。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：説明と同意</a></div>
+</section><div class="part" id="part-3"><p>Part 2</p><h2>倫理と個人情報</h2><p class="part-d">人からデータを集めるときに、必ず守ることです。</p></div>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 12</span></p>
+  <h2 id="h-3">説明と同意</h2>
+  
+<p>人からデータを集めるときは、参加する人に<strong>研究の内容を説明し、自分の意思で参加してもらう</strong>ことが必要です。これを<dfn>インフォームド・コンセント</dfn>（説明と同意）といいます。</p>
+<div class="tbl"><table><thead><tr><th>説明すること</th><th>例</th></tr></thead><tbody><tr><td>研究の目的</td><td>計算練習の効果を調べるため</td></tr><tr><td>やってもらうこと・時間</td><td>14日間、1日5分の練習と記録</td></tr><tr><td>集めるデータ</td><td>練習の成績と時間。名前は記録しない</td></tr><tr><td>データの使い道と保管</td><td>研究発表に使う。個人が特定できない形で、終了後○年で削除</td></tr><tr><td>参加は自由</td><td>参加しなくても、途中でやめても、不利益はない</td></tr><tr><td>問い合わせ先</td><td>研究者と指導教員の連絡先</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>大学によっては、人を対象とする研究に<strong>倫理審査</strong>が必要です。プレゼミの体験レベルでも、どこまで手続きがいるかは指導教員に確認しましょう。参加者が未成年の場合は、保護者の同意も必要になります。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>同意は、説明文を読んでもらったうえで、紙やフォームで記録を残します。同意した日を <code>participants</code> テーブルの <code>consented_at</code> に入れておくと、同意のない人のデータが紛れ込むのを防げます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：個人情報を守る</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 12</span></p>
+  <h2 id="h-4">個人情報を守る</h2>
+  
+<p>研究データには、他人に知られたくない情報が含まれることがあります。<strong>集めない・分ける・見せない・消す</strong>の4つを意識します。</p>
+<div class="tbl"><table><thead><tr><th>方針</th><th>具体的にやること</th></tr></thead><tbody><tr><td>集めない</td><td>問いに不要な情報（名前、学籍番号、住所など）は記録しない</td></tr><tr><td>分ける</td><td>名前と ID の対応表は、システムとは別の場所（紙や、ネットにつながない PC）で保管する</td></tr><tr><td>見せない</td><td>データの一覧は管理者だけが見られるようにする（Step 7）。通信は HTTPS</td></tr><tr><td>消す</td><td>研究が終わったら、決めた期間のあとに確実に削除する</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>データベースのファイル（<code>research.db</code>）や書き出した CSV は、<strong>絶対に GitHub に上げないでください</strong>。<code>.gitignore</code> に <code>*.db</code> と <code>*.csv</code> を書いておきます（<a href="{U["2"]}">第2回</a> Step 10）。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>ID に連番（P01、P02…）を使う場合、参加者が他人の ID を推測して入力できてしまいます。気になる場合は、推測しにくい ID（例：K7F2）を配りましょう。その場合は、Step 5 のフォームの <code>pattern</code> と例（P01）も、配った ID の形に合わせて変えます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：記録フォームを作る</a></div>
+</section><div class="part" id="part-5"><p>Part 3</p><h2>記録システムを作る</h2><p class="part-d">第3回の Flask と SQLite を使って、研究用の記録システムを作ります。</p></div>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 12</span></p>
+  <h2 id="h-5">記録フォームを作る</h2>
+  
+<p><a href="03-python.html">第3回</a>の掲示板と同じ形で、記録フォームを作ります。違うのは、<strong>入力された値をチェックしてから保存する</strong>ところです。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 166" role="img" aria-label="データが記録されてから分析されるまでの流れ">
+<text class="tm tb" x="6" y="14">集める（Part 3）</text><text class="tm tb" x="6" y="160">分析する（Part 4）</text>
+<g class="s"><path d="M86 44H92" marker-end="url(#ar)"/><path d="M176 44H182" marker-end="url(#ar)"/><path d="M266 44H272" marker-end="url(#ar)"/><path d="M315 66V100" marker-end="url(#ar)"/><path d="M272 124H266" marker-end="url(#ar)"/><path d="M182 124H176" marker-end="url(#ar)"/></g>
+<rect class="s fc" x="6" y="24" width="78" height="40" rx="6"/><text class="t" x="45" y="49" text-anchor="middle" style="font-size:12px">スマホ</text><rect class="s fc" x="96" y="24" width="78" height="40" rx="6"/><text class="t" x="135" y="49" text-anchor="middle" style="font-size:12px">記録フォーム</text><rect class="s fc" x="186" y="24" width="78" height="40" rx="6"/><text class="t" x="225" y="49" text-anchor="middle" style="font-size:12px">Flask</text><rect class="s fc" x="276" y="24" width="78" height="40" rx="6"/><text class="t" x="315" y="49" text-anchor="middle" style="font-size:12px">SQLite</text><rect class="s fc" x="276" y="104" width="78" height="40" rx="6"/><text class="t" x="315" y="129" text-anchor="middle" style="font-size:12px">CSV</text><rect class="s fc" x="186" y="104" width="78" height="40" rx="6"/><text class="t" x="225" y="129" text-anchor="middle" style="font-size:12px">pandas</text><rect class="s fc" x="96" y="104" width="78" height="40" rx="6"/><text class="t" x="135" y="129" text-anchor="middle" style="font-size:12px">グラフ</text><rect class="s sp" x="4" y="22" width="82" height="44" rx="8" style="stroke-width:3" data-s="1"/><rect class="s sp" x="94" y="22" width="82" height="44" rx="8" style="stroke-width:3" data-s="2"/><rect class="s sp" x="184" y="22" width="82" height="44" rx="8" style="stroke-width:3" data-s="3"/><rect class="s sp" x="274" y="22" width="82" height="44" rx="8" style="stroke-width:3" data-s="4"/><rect class="s sp" x="274" y="102" width="82" height="44" rx="8" style="stroke-width:3" data-s="5"/><rect class="s sp" x="184" y="102" width="82" height="44" rx="8" style="stroke-width:3" data-s="6"/><rect class="s sp" x="94" y="102" width="82" height="44" rx="8" style="stroke-width:3" data-s="7"/>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 7</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">データの流れ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>参加者が、自分のスマホで記録ページを開く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>フォームに今日の結果を入力して送信する</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>Flask が入力をチェックする</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>問題がなければ SQLite に1行保存される</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>管理者が、全員分のデータを CSV に書き出す</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>pandas で集計する</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>グラフにして、傾向を見る</span></button></li></ol>
+</div>
+<p>はじめに、Step 2 の <code>schema.sql</code> と同じフォルダに次のファイルを作り、<strong>テーブルを作って参加者を登録</strong>します。フォームは登録された ID しか受け付けないので、この準備を忘れると誰も記録できません。</p>
+<div class="code"><div class="code-h"><span>init_db.py</span><button class="copy" type="button" data-copy="import sqlite3
+
+conn = sqlite3.connect(&quot;research.db&quot;)
+with open(&quot;schema.sql&quot;, encoding=&quot;utf-8&quot;) as f:
+    conn.executescript(f.read())          # テーブルを作る（すでにあれば何もしない）
+
+# 同意を得た参加者だけを登録する
+participants = [
+    (&quot;P01&quot;, &quot;2026-11-16&quot;),
+    (&quot;P02&quot;, &quot;2026-11-16&quot;),
+]
+conn.executemany(
+    &quot;INSERT OR IGNORE INTO participants (participant_id, consented_at) VALUES (?, ?)&quot;,
+    participants,
+)
+conn.commit()
+conn.close()
+print(&quot;準備ができました&quot;)">コピー</button></div><pre><code>import sqlite3
+
+conn = sqlite3.connect("research.db")
+with open("schema.sql", encoding="utf-8") as f:
+    conn.executescript(f.read())          <span class="cm"># テーブルを作る（すでにあれば何もしない）</span>
+
+<span class="cm"># 同意を得た参加者だけを登録する</span>
+participants = [
+    ("P01", "2026-11-16"),
+    ("P02", "2026-11-16"),
+]
+conn.executemany(
+    "INSERT OR IGNORE INTO participants (participant_id, consented_at) VALUES (?, ?)",
+    participants,
+)
+conn.commit()
+conn.close()
+print("準備ができました")</code></pre></div>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> python init_db.py
+準備ができました</code></pre></div>
+<p>参加者が増えたら、<code>participants</code> のリストに足して、もう一度実行します（登録済みの ID は二重に入りません）。</p>
+<div class="code"><div class="code-h"><span>app.py（記録の部分）</span><button class="copy" type="button" data-copy="import sqlite3
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+DB = &quot;research.db&quot;
+
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.route(&quot;/&quot;, methods=[&quot;GET&quot;, &quot;POST&quot;])
+def record():
+    errors = []
+    if request.method == &quot;POST&quot;:
+        pid = request.form.get(&quot;participant_id&quot;, &quot;&quot;).strip().upper()
+        day = request.form.get(&quot;day&quot;, type=int)
+        total = request.form.get(&quot;total&quot;, type=int)
+        correct = request.form.get(&quot;correct&quot;, type=int)
+        seconds = request.form.get(&quot;seconds&quot;, type=float)
+        difficulty = request.form.get(&quot;difficulty&quot;, type=int)
+
+        with get_db() as conn:
+            known = conn.execute(&quot;SELECT 1 FROM participants WHERE participant_id = ?&quot;, (pid,)).fetchone()
+        if not known:
+            errors.append(&quot;参加者IDが見つかりません。配られたIDを確認してください&quot;)
+        if day is None or not 1 &lt;= day &lt;= 14:
+            errors.append(&quot;何日目かは 1〜14 で入力してください&quot;)
+        if total is None or correct is None or not 0 &lt;= correct &lt;= total:
+            errors.append(&quot;正答数は 0〜問題数 の範囲で入力してください&quot;)
+        if seconds is None or seconds &lt;= 0:
+            errors.append(&quot;かかった時間を秒で入力してください&quot;)
+
+        if not errors:
+            with get_db() as conn:
+                conn.execute(
+                    &quot;INSERT INTO records (participant_id, day, total, correct, seconds, difficulty)&quot;
+                    &quot; VALUES (?, ?, ?, ?, ?, ?)&quot;,
+                    (pid, day, total, correct, seconds, difficulty),
+                )
+            return redirect(url_for(&quot;thanks&quot;))
+    return render_template(&quot;record.html&quot;, errors=errors)
+
+@app.route(&quot;/thanks&quot;)
+def thanks():
+    return render_template(&quot;thanks.html&quot;)">コピー</button></div><pre><code>import sqlite3
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+DB = "research.db"
+
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.route("/", methods=["GET", "POST"])
+def record():
+    errors = []
+    if request.method == "POST":
+        pid = request.form.get("participant_id", "").strip().upper()
+        day = request.form.get("day", type=int)
+        total = request.form.get("total", type=int)
+        correct = request.form.get("correct", type=int)
+        seconds = request.form.get("seconds", type=float)
+        difficulty = request.form.get("difficulty", type=int)
+
+        with get_db() as conn:
+            known = conn.execute("SELECT 1 FROM participants WHERE participant_id = ?", (pid,)).fetchone()
+        if not known:
+            errors.append("参加者IDが見つかりません。配られたIDを確認してください")
+        if day is None or not 1 &lt;= day &lt;= 14:
+            errors.append("何日目かは 1〜14 で入力してください")
+        if total is None or correct is None or not 0 &lt;= correct &lt;= total:
+            errors.append("正答数は 0〜問題数 の範囲で入力してください")
+        if seconds is None or seconds &lt;= 0:
+            errors.append("かかった時間を秒で入力してください")
+
+        if not errors:
+            with get_db() as conn:
+                conn.execute(
+                    "INSERT INTO records (participant_id, day, total, correct, seconds, difficulty)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (pid, day, total, correct, seconds, difficulty),
+                )
+            return redirect(url_for("thanks"))
+    return render_template("record.html", errors=errors)
+
+@app.route("/thanks")
+def thanks():
+    return render_template("thanks.html")</code></pre></div>
+<div class="code"><div class="code-h"><span>templates/record.html（フォームの部分）</span><button class="copy" type="button" data-copy="{% for e in errors %}
+  &lt;p class=&quot;error&quot;&gt;{{ e }}&lt;/p&gt;
+{% endfor %}
+
+&lt;form method=&quot;post&quot;&gt;
+  &lt;label&gt;参加者ID
+    &lt;input name=&quot;participant_id&quot; required placeholder=&quot;P01&quot; pattern=&quot;[Pp][0-9]{2}&quot;&gt;
+  &lt;/label&gt;
+  &lt;label&gt;何日目
+    &lt;input name=&quot;day&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;14&quot; required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;問題数
+    &lt;input name=&quot;total&quot; type=&quot;number&quot; min=&quot;1&quot; value=&quot;20&quot; required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;正答数
+    &lt;input name=&quot;correct&quot; type=&quot;number&quot; min=&quot;0&quot; required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;かかった時間（秒）
+    &lt;input name=&quot;seconds&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;難しさ（1：かんたん 〜 5：むずかしい）
+    &lt;select name=&quot;difficulty&quot;&gt;
+      &lt;option&gt;1&lt;/option&gt;&lt;option&gt;2&lt;/option&gt;&lt;option selected&gt;3&lt;/option&gt;&lt;option&gt;4&lt;/option&gt;&lt;option&gt;5&lt;/option&gt;
+    &lt;/select&gt;
+  &lt;/label&gt;
+  &lt;button&gt;記録する&lt;/button&gt;
+&lt;/form&gt;">コピー</button></div><pre><code>{% for e in errors %}
+  &lt;p class="error"&gt;{{ e }}&lt;/p&gt;
+{% endfor %}
+
+&lt;form method="post"&gt;
+  &lt;label&gt;参加者ID
+    &lt;input name="participant_id" required placeholder="P01" pattern="[Pp][0-9]{2}"&gt;
+  &lt;/label&gt;
+  &lt;label&gt;何日目
+    &lt;input name="day" type="number" min="1" max="14" required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;問題数
+    &lt;input name="total" type="number" min="1" value="20" required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;正答数
+    &lt;input name="correct" type="number" min="0" required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;かかった時間（秒）
+    &lt;input name="seconds" type="number" min="0" step="0.1" required&gt;
+  &lt;/label&gt;
+  &lt;label&gt;難しさ（1：かんたん 〜 5：むずかしい）
+    &lt;select name="difficulty"&gt;
+      &lt;option&gt;1&lt;/option&gt;&lt;option&gt;2&lt;/option&gt;&lt;option selected&gt;3&lt;/option&gt;&lt;option&gt;4&lt;/option&gt;&lt;option&gt;5&lt;/option&gt;
+    &lt;/select&gt;
+  &lt;/label&gt;
+  &lt;button&gt;記録する&lt;/button&gt;
+&lt;/form&gt;</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>request.form.get("day", type=int)</code> は、数字に変換できない値が来たときに <code>None</code> を返します。そのため、数字以外が入力されてもエラーで止まらず、チェックに引っかかります。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>参加者はスマホで入力します。<code>type="number"</code> にすると数字のキーボードが出て、入力しやすくなります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：入力ミスと記録漏れを防ぐ</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 12</span></p>
+  <h2 id="h-6">入力ミスと記録漏れを防ぐ</h2>
+  
+<p>集めたデータの質は、入力のしやすさとチェックで決まります。チェックは<strong>2段構え</strong>にします。</p>
+<div class="tbl stack"><table><thead><tr><th>チェックする場所</th><th>方法</th><th>役割</th></tr></thead><tbody><tr><td data-label="チェックする場所">ブラウザ（HTML）</td><td data-label="方法"><code>required</code>、<code>min</code>、<code>max</code>、<code>pattern</code></td><td data-label="役割">入力の段階で、うっかりミスを知らせる</td></tr><tr><td data-label="チェックする場所">サーバー（Python）</td><td data-label="方法">Step 5 の <code>if</code> のチェック</td><td data-label="役割">HTML のチェックは書き換えられるので、最後の砦はサーバー側</td></tr></tbody></table></div>
+<p>管理者は、毎日<strong>記録漏れ</strong>がないかを確かめます。SQL の <code>GROUP BY</code> で、参加者ごとの記録回数をまとめられます。</p>
+<div class="code"><div class="code-h"><span>参加者ごとの記録回数</span><button class="copy" type="button" data-copy="SELECT participant_id,
+       COUNT(*)  AS records,     -- 記録した回数
+       MAX(day)  AS last_day     -- 最後に記録した日
+FROM records
+GROUP BY participant_id
+ORDER BY participant_id;">コピー</button></div><pre><code>SELECT participant_id,
+       COUNT(*)  AS records,     <span class="cm">-- 記録した回数</span>
+       MAX(day)  AS last_day     <span class="cm">-- 最後に記録した日</span>
+FROM records
+GROUP BY participant_id
+ORDER BY participant_id;</code></pre></div>
+<div class="code"><div class="code-h"><span>同じ日に2回記録していないか</span><button class="copy" type="button" data-copy="SELECT participant_id, day, COUNT(*) AS n
+FROM records
+GROUP BY participant_id, day
+HAVING COUNT(*) &gt; 1;            -- 同じ日に2回以上記録している人">コピー</button></div><pre><code>SELECT participant_id, day, COUNT(*) AS n
+FROM records
+GROUP BY participant_id, day
+HAVING COUNT(*) &gt; 1;            <span class="cm">-- 同じ日に2回以上記録している人</span></code></pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>記録漏れに気づいたら、その日のうちに参加者へ声をかけましょう。数日たつと記憶があいまいになり、正確な記録ができなくなります。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">HTML に required や max を書いたのに、Python 側でもチェックするのはなぜ？</p><div class="opts"><button class="opt" type="button">二重にすると速くなるから</button><button class="opt" type="button">ブラウザ側のチェックは、書き換えたり飛ばしたりできるから</button><button class="opt" type="button">Python では HTML が読めないから</button></div><p class="fb">ブラウザから届く値は信用せず、サーバーで必ず確かめます。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：管理者だけが見られるようにする</a></div>
+</section>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 12</span></p>
+  <h2 id="h-7">管理者だけが見られるようにする</h2>
+  
+<p>全員の記録の一覧や CSV の書き出しは、管理者（研究者）だけが使えるようにします。ここでは<a href="01-web.html">第1回</a>の Security 2 で学んだ<strong>セッション</strong>を使って、簡単なログインを作ります。</p>
+<div class="code"><div class="code-h"><span>app.py（管理者の部分）</span><button class="copy" type="button" data-copy="import os, secrets
+from flask import session
+
+app.secret_key = os.environ[&quot;SECRET_KEY&quot;]           # セッション用の秘密の鍵
+ADMIN_PASSWORD = os.environ[&quot;ADMIN_PASSWORD&quot;]       # 管理者のパスワード
+
+def is_admin():
+    return session.get(&quot;admin&quot;) is True
+
+@app.route(&quot;/admin/login&quot;, methods=[&quot;GET&quot;, &quot;POST&quot;])
+def admin_login():
+    if request.method == &quot;POST&quot;:
+        if secrets.compare_digest(request.form.get(&quot;password&quot;, &quot;&quot;), ADMIN_PASSWORD):
+            session[&quot;admin&quot;] = True
+            return redirect(url_for(&quot;admin&quot;))
+    return render_template(&quot;login.html&quot;)
+
+@app.route(&quot;/admin&quot;)
+def admin():
+    if not is_admin():
+        return redirect(url_for(&quot;admin_login&quot;))
+    with get_db() as conn:
+        rows = conn.execute(
+            &quot;SELECT participant_id, COUNT(*) AS records, MAX(day) AS last_day&quot;
+            &quot; FROM records GROUP BY participant_id ORDER BY participant_id&quot;
+        ).fetchall()
+    return render_template(&quot;admin.html&quot;, rows=rows)">コピー</button></div><pre><code>import os, secrets
+from flask import session
+
+app.secret_key = os.environ["SECRET_KEY"]           <span class="cm"># セッション用の秘密の鍵</span>
+ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]       <span class="cm"># 管理者のパスワード</span>
+
+def is_admin():
+    return session.get("admin") is True
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        if secrets.compare_digest(request.form.get("password", ""), ADMIN_PASSWORD):
+            session["admin"] = True
+            return redirect(url_for("admin"))
+    return render_template("login.html")
+
+@app.route("/admin")
+def admin():
+    if not is_admin():
+        return redirect(url_for("admin_login"))
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT participant_id, COUNT(*) AS records, MAX(day) AS last_day"
+            " FROM records GROUP BY participant_id ORDER BY participant_id"
+        ).fetchall()
+    return render_template("admin.html", rows=rows)</code></pre></div>
+<p>パスワードや秘密の鍵は、コードに書かずに<dfn>環境変数</dfn>で渡します。こうしておけば、コードを GitHub に上げても秘密は漏れません。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm"># 秘密の鍵を作る（表示された文字列を使う）</span>
+<span class="cm">$</span> python3 -c "import secrets; print(secrets.token_hex(32))"
+
+<span class="cm"># Mac / Git Bash</span>
+<span class="cm">$</span> export SECRET_KEY="さっきの文字列"
+<span class="cm">$</span> export ADMIN_PASSWORD="管理者のパスワード"
+
+<span class="cm"># Windows（PowerShell）</span>
+<span class="cm">$</span> $env:SECRET_KEY="さっきの文字列"
+<span class="cm">$</span> $env:ADMIN_PASSWORD="管理者のパスワード"</code></pre></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>起動するときの注意</p><div><p>環境変数を設定せずに起動すると、<code>KeyError: 'SECRET_KEY'</code> で止まります。また、この設定はターミナルを閉じると消えるので、サーバーを起動するたびに設定します。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>secrets.compare_digest</code> は、パスワードを比べるための安全な方法です。ふつうの <code>==</code> より、比べる時間の差から推測される危険が小さくなります。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>この方法は、少人数の研究用の簡単なしくみです。大切な個人情報を大人数から集める場合は、大学の情報部門や指導教員に相談し、より安全なしくみを使いましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：公開して、運用する</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 12</span></p>
+  <h2 id="h-8">公開して、運用する</h2>
+  
+<p>参加者が自分のスマホから記録できるように、システムをインターネットに公開します。公開の考え方は<a href="03-python.html">第3回</a>の Step 14 を見てください。</p>
+<div class="tbl"><table><thead><tr><th>運用のポイント</th><th>やること</th></tr></thead><tbody><tr><td>予備調査</td><td>本番の前に、2〜3人に数日使ってもらい、わかりにくい点を直す</td></tr><tr><td>データが消えない場所か確かめる</td><td>公開サービスによっては、再起動や更新のたびにファイルがリセットされる。SQLite を使うなら、ファイルが残る設定やサービスを選ぶ</td></tr><tr><td>毎日バックアップ</td><td>管理者ページから CSV を書き出して、日付つきで保存する</td></tr><tr><td>研究ノート</td><td>トラブル、参加者からの質問、休んだ日などを日付つきで記録する</td></tr><tr><td>リマインド</td><td>記録の時間を決めて、参加者に声をかける</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>公開したあとは <code>debug=True</code> を必ず外します。エラーの詳細画面から、プログラムの中身が見えてしまうためです。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>本番の途中でシステムを大きく変えると、前半と後半でデータの意味が変わってしまいます。直す必要が出たら、変えた日と内容を研究ノートに残しましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：CSV に書き出す</a></div>
+</section><div class="part" id="part-9"><p>Part 4</p><h2>集めたデータを分析する</h2><p class="part-d">記録をデータとして取り出し、集計してグラフにします。</p></div>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 12</span></p>
+  <h2 id="h-9">CSV に書き出す</h2>
+  
+<p>データが集まったら、分析のために <dfn>CSV</dfn>（カンマで区切った表のファイル）に書き出します。CSV は Excel でも pandas でも開ける、データの共通の形です。</p>
+<div class="code"><div class="code-h"><span>app.py（CSV の書き出し）</span><button class="copy" type="button" data-copy="import csv, io
+from flask import Response
+
+@app.route(&quot;/admin/export.csv&quot;)
+def export_csv():
+    if not is_admin():
+        return redirect(url_for(&quot;admin_login&quot;))
+    with get_db() as conn:
+        rows = conn.execute(&quot;SELECT * FROM records ORDER BY participant_id, day&quot;).fetchall()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([&quot;id&quot;, &quot;participant_id&quot;, &quot;day&quot;, &quot;total&quot;, &quot;correct&quot;, &quot;seconds&quot;, &quot;difficulty&quot;, &quot;created_at&quot;])
+    writer.writerows([tuple(r) for r in rows])
+
+    # 先頭の ﻿ は、Excel で開いても文字化けしないための印
+    return Response(&quot;﻿&quot; + buf.getvalue(), mimetype=&quot;text/csv&quot;,
+                    headers={&quot;Content-Disposition&quot;: &quot;attachment; filename=records.csv&quot;})">コピー</button></div><pre><code>import csv, io
+from flask import Response
+
+@app.route("/admin/export.csv")
+def export_csv():
+    if not is_admin():
+        return redirect(url_for("admin_login"))
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM records ORDER BY participant_id, day").fetchall()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["id", "participant_id", "day", "total", "correct", "seconds", "difficulty", "created_at"])
+    writer.writerows([tuple(r) for r in rows])
+
+    <span class="cm"># 先頭の ﻿ は、Excel で開いても文字化けしないための印</span>
+    return Response("﻿" + buf.getvalue(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=records.csv"})</code></pre></div>
+<div class="code out"><div class="code-h"><span>書き出された records.csv（例）</span></div><pre><code>id,participant_id,day,total,correct,seconds,difficulty,created_at
+1,P01,1,20,16,82.4,3,2026-11-16 09:12:40
+2,P02,1,20,15,90.1,4,2026-11-16 10:03:12
+3,P01,2,20,17,79.8,3,2026-11-17 09:05:51</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>created_at</code> は世界標準時（UTC）です。日本時間にするには9時間を足します。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>書き出した CSV はそのまま残しておき、分析は<strong>コピーに対して</strong>行いましょう。元のデータを書き換えてしまっても、いつでもやり直せます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：pandas で集計する</a></div>
+</section>
+<section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Step 10<span>/ 12</span></p>
+  <h2 id="h-10">pandas で集計する</h2>
+  
+<p><dfn>pandas</dfn> は、表のデータを Python で扱うためのライブラリです。Excel の集計を、コードで正確にくり返せるようにしたものと考えるとわかりやすいです。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> pip install pandas matplotlib scipy</code></pre></div>
+<div class="code"><div class="code-h"><span>analyze.py</span><button class="copy" type="button" data-copy="import pandas as pd
+
+df = pd.read_csv(&quot;records.csv&quot;)
+
+# 元の数字から、分析に使う値を計算する
+df[&quot;accuracy&quot;] = df[&quot;correct&quot;] / df[&quot;total&quot;]        # 正答率
+df[&quot;sec_per_q&quot;] = df[&quot;seconds&quot;] / df[&quot;total&quot;]       # 1問あたりの秒数
+
+print(len(df), &quot;件&quot;)
+print(df.describe())
+
+# 日ごとの平均
+daily = df.groupby(&quot;day&quot;)[[&quot;accuracy&quot;, &quot;sec_per_q&quot;]].mean()
+print(daily.round(2))">コピー</button></div><pre><code>import pandas as pd
+
+df = pd.read_csv("records.csv")
+
+<span class="cm"># 元の数字から、分析に使う値を計算する</span>
+df["accuracy"] = df["correct"] / df["total"]        <span class="cm"># 正答率</span>
+df["sec_per_q"] = df["seconds"] / df["total"]       <span class="cm"># 1問あたりの秒数</span>
+
+print(len(df), "件")
+print(df.describe())
+
+<span class="cm"># 日ごとの平均</span>
+daily = df.groupby("day")[["accuracy", "sec_per_q"]].mean()
+print(daily.round(2))</code></pre></div>
+<div class="code out"><div class="code-h"><span>実行結果の一部（例）</span></div><pre><code>     accuracy  sec_per_q
+day
+1        0.78       4.12
+2        0.80       3.98
+3        0.81       3.85
+...
+13       0.90       2.92
+14       0.91       2.86</code></pre></div>
+<p>リサーチクエスチョンに答えるために、1日目と14日目を<strong>同じ人どうしで</strong>比べます。</p>
+<div class="code"><div class="code-h"><span>analyze.py（つづき）</span><button class="copy" type="button" data-copy="# 1日目と14日目を、人ごとに並べる
+first = df[df[&quot;day&quot;] == 1].set_index(&quot;participant_id&quot;)[&quot;sec_per_q&quot;]
+last = df[df[&quot;day&quot;] == 14].set_index(&quot;participant_id&quot;)[&quot;sec_per_q&quot;]
+paired = pd.DataFrame({&quot;day1&quot;: first, &quot;day14&quot;: last}).dropna()
+
+paired[&quot;change&quot;] = paired[&quot;day14&quot;] - paired[&quot;day1&quot;]
+print(paired.round(2))
+print(&quot;平均の変化：&quot;, paired[&quot;change&quot;].mean().round(2), &quot;秒&quot;)">コピー</button></div><pre><code><span class="cm"># 1日目と14日目を、人ごとに並べる</span>
+first = df[df["day"] == 1].set_index("participant_id")["sec_per_q"]
+last = df[df["day"] == 14].set_index("participant_id")["sec_per_q"]
+paired = pd.DataFrame({"day1": first, "day14": last}).dropna()
+
+paired["change"] = paired["day14"] - paired["day1"]
+print(paired.round(2))
+print("平均の変化：", paired["change"].mean().round(2), "秒")</code></pre></div>
+<div class="tbl"><table><thead><tr><th>よく使う書き方</th><th>意味</th></tr></thead><tbody><tr><td><code>df["列名"]</code></td><td>列を取り出す</td></tr><tr><td><code>df[df["day"] == 1]</code></td><td>条件に合う行だけにする</td></tr><tr><td><code>df.groupby("day").mean()</code></td><td>グループごとの平均</td></tr><tr><td><code>df.describe()</code></td><td>件数・平均・最小・最大などをまとめて表示</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>まず <code>len(df)</code> で件数を確かめ、「10人 × 14日 ＝ 140件」になっているかを見ましょう。足りなければ記録漏れ、多ければ二重記録です。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-11">次へ：グラフにする</a></div>
+</section>
+<section class="step" id="step-11" data-step="11" aria-labelledby="h-11">
+  <p class="step-no">Step 11<span>/ 12</span></p>
+  <h2 id="h-11">グラフにする</h2>
+  
+<p>数字の表だけでは傾向が見えにくいので、<dfn>matplotlib</dfn> でグラフにします。</p>
+<div class="code"><div class="code-h"><span>chart.py</span><button class="copy" type="button" data-copy="import matplotlib.pyplot as plt
+
+ax = daily[&quot;sec_per_q&quot;].plot(marker=&quot;o&quot;)
+ax.set_xlabel(&quot;day&quot;)
+ax.set_ylabel(&quot;seconds per question&quot;)
+ax.set_title(&quot;Average time per question&quot;)
+plt.savefig(&quot;time_per_question.png&quot;, dpi=200, bbox_inches=&quot;tight&quot;)">コピー</button></div><pre><code>import matplotlib.pyplot as plt
+
+ax = daily["sec_per_q"].plot(marker="o")
+ax.set_xlabel("day")
+ax.set_ylabel("seconds per question")
+ax.set_title("Average time per question")
+plt.savefig("time_per_question.png", dpi=200, bbox_inches="tight")</code></pre></div>
+<figure class="fig"><svg viewBox="0 0 360 222" role="img" aria-label="1問あたりの平均時間が14日間で4.1秒から2.9秒に下がる折れ線グラフ（架空の例）">
+<path class="s sl thin" d="M50 180.0H342"/><text class="tm mono" x="44" y="184.0" text-anchor="end">2.5</text><path class="s sl thin" d="M50 140.0H342"/><text class="tm mono" x="44" y="144.0" text-anchor="end">3.0</text><path class="s sl thin" d="M50 100.0H342"/><text class="tm mono" x="44" y="104.0" text-anchor="end">3.5</text><path class="s sl thin" d="M50 60.0H342"/><text class="tm mono" x="44" y="64.0" text-anchor="end">4.0</text><path class="s sl thin" d="M50 20.0H342"/><text class="tm mono" x="44" y="24.0" text-anchor="end">4.5</text><text class="tm mono" x="50.0" y="196" text-anchor="middle">1</text><text class="tm mono" x="116.9" y="196" text-anchor="middle">4</text><text class="tm mono" x="183.8" y="196" text-anchor="middle">7</text><text class="tm mono" x="250.8" y="196" text-anchor="middle">10</text><text class="tm mono" x="340.0" y="196" text-anchor="middle">14</text><path class="s sp" d="M50.0 50.4 L72.3 61.6 L94.6 72.0 L116.9 83.2 L139.2 90.4 L161.5 100.0 L183.8 107.2 L206.2 113.6 L228.5 122.4 L250.8 128.0 L273.1 135.2 L295.4 140.8 L317.7 146.4 L340.0 151.2" style="stroke-width:2.5"/><circle class="fp" cx="50.0" cy="50.4" r="4"/><circle class="fp" cx="72.3" cy="61.6" r="2.6"/><circle class="fp" cx="94.6" cy="72.0" r="2.6"/><circle class="fp" cx="116.9" cy="83.2" r="2.6"/><circle class="fp" cx="139.2" cy="90.4" r="2.6"/><circle class="fp" cx="161.5" cy="100.0" r="2.6"/><circle class="fp" cx="183.8" cy="107.2" r="2.6"/><circle class="fp" cx="206.2" cy="113.6" r="2.6"/><circle class="fp" cx="228.5" cy="122.4" r="2.6"/><circle class="fp" cx="250.8" cy="128.0" r="2.6"/><circle class="fp" cx="273.1" cy="135.2" r="2.6"/><circle class="fp" cx="295.4" cy="140.8" r="2.6"/><circle class="fp" cx="317.7" cy="146.4" r="2.6"/><circle class="fp" cx="340.0" cy="151.2" r="4"/>
+<text class="t mono tb tp" x="58.0" y="42.4" style="font-size:11px">4.12</text><text class="t mono tb tp" x="334.0" y="141.2" text-anchor="end" style="font-size:11px">2.86</text>
+<text class="tm" x="196" y="216" text-anchor="middle">何日目</text><text class="tm" x="8" y="12">1問あたりの平均時間（秒）</text>
+</svg><figcaption>例のグラフ（数値は説明用の架空のデータ）</figcaption></figure>
+<p>平均だけでは、全員が同じように速くなったのか、一部の人だけが大きく変わったのかがわかりません。1人ずつの変化も重ねて描いてみましょう。</p>
+<div class="code"><div class="code-h"><span>chart.py（つづき）</span><button class="copy" type="button" data-copy="# 1人1本の線で、全員の変化を重ねて描く
+for pid, g in df.groupby(&quot;participant_id&quot;):
+    plt.plot(g[&quot;day&quot;], g[&quot;sec_per_q&quot;], marker=&quot;.&quot;, alpha=0.6, label=pid)
+plt.legend(ncol=2, fontsize=8)
+plt.savefig(&quot;each_person.png&quot;, dpi=200, bbox_inches=&quot;tight&quot;)">コピー</button></div><pre><code><span class="cm"># 1人1本の線で、全員の変化を重ねて描く</span>
+for pid, g in df.groupby("participant_id"):
+    plt.plot(g["day"], g["sec_per_q"], marker=".", alpha=0.6, label=pid)
+plt.legend(ncol=2, fontsize=8)
+plt.savefig("each_person.png", dpi=200, bbox_inches="tight")</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>matplotlib は、そのままでは日本語が四角い記号（豆腐）になって表示されません。ラベルを英語にするか、<code>japanize-matplotlib</code> などで日本語フォントを設定します。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>グラフには、軸の名前と単位を必ず書きます。「何の、どの単位の数字か」がわからないグラフは、レポートでは使えません。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-12">次へ：考察につなげる</a></div>
+</section>
+<section class="step" id="step-12" data-step="12" aria-labelledby="h-12">
+  <p class="step-no">Step 12<span>/ 12</span></p>
+  <h2 id="h-12">考察につなげる</h2>
+  
+<p>グラフで変化が見えても、それが<strong>偶然の差なのか</strong>を確かめる必要があります。同じ人の前後を比べるときは、<dfn>対応のある t 検定</dfn>という方法がよく使われます。</p>
+<div class="code"><div class="code-h"><span>analyze.py（つづき）</span><button class="copy" type="button" data-copy="from scipy import stats
+
+result = stats.ttest_rel(paired[&quot;day1&quot;], paired[&quot;day14&quot;])
+print(&quot;p値：&quot;, result.pvalue)">コピー</button></div><pre><code>from scipy import stats
+
+result = stats.ttest_rel(paired["day1"], paired["day14"])
+print("p値：", result.pvalue)</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>p値が小さい（よく 0.05 未満が目安）ほど、「偶然だけでこの差が出たとは考えにくい」ことを表します。ただし、p値は効果の大きさを表すものではありません。何秒短くなったのか、という変化の大きさもあわせて報告します。どの検定を使うべきかは、データの形によって変わるので、指導教員に相談しましょう。</p></div></aside>
+<p>分析の結果が出たら、<a href="index.html#step-7">研究の流れ</a>の「考察する」に進みます。</p>
+<div class="tbl"><table><thead><tr><th>考察で考えること</th><th>この例では</th></tr></thead><tbody><tr><td>仮説と合っているか</td><td>1問あたりの時間は短くなった。正答率は下がっていない</td></tr><tr><td>ほかの説明はできないか</td><td>同じ形式の問題に慣れただけかもしれない</td></tr><tr><td>人による違い</td><td>もともと速い人はあまり変わらなかった</td></tr><tr><td>研究ノートとの照合</td><td>8日目に全員が遅くなったのは、問題の種類を変えた日だった</td></tr><tr><td>限界と次の課題</td><td>10人と少なく、練習しないグループと比べていない</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>考察から生まれた「次の課題」は、次の研究のリサーチクエスチョンになります。システムも少し直せば、次の研究にそのまま使えます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="12"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="13" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：自分の研究用の記録システムを作る</h2>
+  <p>例の計算練習ではなく、<a href="index.html#exercise">研究計画シート</a>に書いた自分のテーマで作ります。</p>
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">演習 1</span><h3>項目とテーブルを決める</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>リサーチクエスチョンから、記録する項目とテーブルを書き出す</dd></div><div><dt>関係する段階</dt><dd>Step 1・2</dd></div></dl>
+    <ol class="steps"><li>RQ を1文で書く</li><li>「変えるもの」と「測るもの」に分ける</li><li>項目を書き出し、<code>CREATE TABLE</code> にする</li><li>指導教員や先輩に見てもらう</li></ol>
+  </div>
+  <div class="exercise" id="ex-2">
+    <div class="ex-h"><span class="ex-tag">演習 2</span><h3>説明文と同意の方法を用意する</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>参加者向けの説明文を書き、データの守り方を決める</dd></div><div><dt>関係する段階</dt><dd>Step 3・4</dd></div></dl>
+    <ol class="steps"><li>Step 3 の表の6項目を埋めた説明文を書く</li><li>ID の配り方と、対応表の保管場所を決める</li><li>倫理審査が必要か、指導教員に確認する</li></ol>
+  </div>
+  <div class="exercise" id="ex-3">
+    <div class="ex-h"><span class="ex-tag">演習 3</span><h3>記録システムを作って予備調査をする</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>フォーム・チェック・管理者ページを作り、試しに使ってもらう</dd></div><div><dt>関係する段階</dt><dd>Step 5〜8</dd></div></dl>
+    <ol class="steps"><li>Step 5〜7 のコードを、自分の項目に合わせて書き換える</li><li>わざと間違った値を入れて、チェックが働くか確かめる</li><li>2〜3人に3日間使ってもらい、感想を聞いて直す</li><li><code>.gitignore</code> に <code>*.db</code> と <code>*.csv</code> を入れて、GitHub に push する</li></ol>
+  </div>
+  <div class="exercise" id="ex-4">
+    <div class="ex-h"><span class="ex-tag">演習 4</span><h3>予備調査のデータで分析の練習をする</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>CSV を書き出し、集計とグラフ作成までを一度通す</dd></div><div><dt>関係する段階</dt><dd>Step 9〜12</dd></div></dl>
+    <ol class="steps"><li>管理者ページから CSV を書き出す</li><li>pandas で件数と平均を出す</li><li>グラフを1枚作り、軸の名前と単位を入れる</li><li>「本番ではこう分析する」という計画を1段落で書く</li></ol>
+    <aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>予備調査のデータで分析まで一度通しておくと、「この項目が足りない」「この形だと集計しにくい」に本番前に気づけます。</p></div></aside>
+  </div>
+  <div class="step-foot"><button class="done" type="button" data-step="13"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+    
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：データ収集のチェックリストと用語</h2>
+  <div class="tbl"><table><thead><tr><th>データを集める前のチェック</th><th>段階</th></tr></thead><tbody><tr><td>RQ と仮説が1文で書けている</td><td><a href="#step-1">1</a></td></tr><tr><td>記録する項目が RQ に必要十分で、元の数字を記録している</td><td><a href="#step-1">1</a></td></tr><tr><td>テーブルが「1行＝1回の記録」になっている</td><td><a href="#step-2">2</a></td></tr><tr><td>説明文と同意の方法があり、必要な手続きを指導教員に確認した</td><td><a href="#step-3">3</a></td></tr><tr><td>名前を記録せず、ID の対応表を別に保管している</td><td><a href="#step-4">4</a></td></tr><tr><td>ブラウザとサーバーの両方で入力をチェックしている</td><td><a href="#step-6">6</a></td></tr><tr><td>管理者ページにログインが必要で、秘密は環境変数にある</td><td><a href="#step-7">7</a></td></tr><tr><td>予備調査をして、バックアップの方法を決めた</td><td><a href="#step-8">8</a></td></tr><tr><td>分析の方法（何と何を比べるか）を先に決めた</td><td><a href="#step-10">10</a></td></tr></tbody></table></div>
+  <div class="tbl stack"><table><thead><tr><th>用語</th><th>ひとことで</th><th>段階</th></tr></thead><tbody><tr><td data-label="用語">整然データ（tidy data）</td><td data-label="ひとことで">1行が1件の観測になっている表</td><td data-label="段階"><a href="#step-2">2</a></td></tr><tr><td data-label="用語">インフォームド・コンセント</td><td data-label="ひとことで">説明したうえで、自由な意思で同意してもらうこと</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">匿名化</td><td data-label="ひとことで">名前などを ID に置き換え、誰のデータかわからなくすること</td><td data-label="段階"><a href="#step-4">4</a></td></tr><tr><td data-label="用語">バリデーション</td><td data-label="ひとことで">入力された値が正しいかのチェック</td><td data-label="段階"><a href="#step-6">6</a></td></tr><tr><td data-label="用語">環境変数</td><td data-label="ひとことで">パスワードなどをコードの外から渡すしくみ</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">予備調査</td><td data-label="ひとことで">本番の前に少人数で試すこと</td><td data-label="段階"><a href="#step-8">8</a></td></tr><tr><td data-label="用語">CSV</td><td data-label="ひとことで">カンマ区切りの表のファイル</td><td data-label="段階"><a href="#step-9">9</a></td></tr><tr><td data-label="用語">pandas / matplotlib</td><td data-label="ひとことで">表の集計 / グラフ作成のライブラリ</td><td data-label="段階"><a href="#step-10">10</a></td></tr><tr><td data-label="用語">対応のある t 検定</td><td data-label="ひとことで">同じ人の前後の差が偶然かどうかを調べる方法</td><td data-label="段階"><a href="#step-12">12</a></td></tr></tbody></table></div>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="03-python.html" style="text-decoration:none;color:var(--text)"><small>前のレッスン</small>第3回 Python で Web</a>
+    <a class="pg next-l" href="05-report.html" style="text-decoration:none;color:var(--text)"><small>次のレッスン</small>第5回 レポートの書き方</a>
+  </nav>
+</section>
+  </article>
+  <aside class="toc" aria-label="このページの内容"><p>このページの内容</p><ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">集めるデータを決める</a></li><li><a href="#step-2" data-toc="step-2">テーブル設計</a></li><li><a href="#step-3" data-toc="step-3">説明と同意</a></li><li><a href="#step-4" data-toc="step-4">個人情報を守る</a></li><li><a href="#step-5" data-toc="step-5">記録フォーム</a></li><li><a href="#step-6" data-toc="step-6">入力ミス・記録漏れ</a></li><li><a href="#step-7" data-toc="step-7">管理者ページ</a></li><li><a href="#step-8" data-toc="step-8">公開と運用</a></li><li><a href="#step-9" data-toc="step-9">CSV に書き出す</a></li><li><a href="#step-10" data-toc="step-10">pandas で集計</a></li><li><a href="#step-11" data-toc="step-11">グラフにする</a></li><li><a href="#step-12" data-toc="step-12">考察につなげる</a></li><li><a href="#exercise" data-toc="exercise">演習</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul></aside>
+</div>
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-research-system-progress",TOTAL=13,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="13"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+
+  /* 表示結果のデモ */
+  document.querySelectorAll(".demo").forEach(function(d){
+    var page=d.querySelector(".demo-page"),t=d.querySelector("[data-css-toggle]"),like=d.querySelector(".like"),n=0;
+    if(t)t.addEventListener("click",function(){var on=page.classList.toggle("styled");t.textContent=on?"CSS を外す":"CSS を当てる";t.setAttribute("aria-pressed",on)});
+    if(like&&page.dataset.js==="on")like.addEventListener("click",function(){n++;like.textContent="いいね "+n});
+    var a=d.querySelector(".demo-page a");if(a)a.addEventListener("click",function(e){e.preventDefault()});
+  });
+  /* 言語タブ */
+  document.querySelectorAll("[data-tabs]").forEach(function(box){
+    var tabs=[].slice.call(box.querySelectorAll("[role=tab]")),panels=[].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function sel(i){tabs.forEach(function(t,k){t.setAttribute("aria-selected",k===i);t.tabIndex=k===i?0:-1});panels.forEach(function(p,k){p.hidden=k!==i})}
+    tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(i)});t.addEventListener("keydown",function(e){if(e.key==="ArrowRight"){sel((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}if(e.key==="ArrowLeft"){var k=(i-1+tabs.length)%tabs.length;sel(k);tabs[k].focus()}})});
+    sel(0);
+  });
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

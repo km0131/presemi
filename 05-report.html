@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>レポートの書き方</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+.code.out .code-h{background:var(--surface)}
+.code.out pre{background:var(--bg)}
+.demo{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.demo-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub)}
+.demo-page{background:#fff;color:#000;font-family:"Times New Roman",Times,"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.35;padding:6px 18px 18px;letter-spacing:0}
+.demo-page h1{font-size:2em;font-weight:bold;margin:.5em 0;line-height:1.2}
+.demo-page p{margin:1em 0;max-width:none}
+.demo-page ul{margin:1em 0;padding-left:40px}
+.demo-page a{color:#0000EE;text-decoration:underline}
+.demo-page button{font:13px system-ui,sans-serif;padding:1px 8px;border:1px solid #767676;border-radius:3px;background:#efefef;color:#000;cursor:pointer;margin-left:6px}
+.demo-page.styled{font-family:var(--font);background:#fff;padding:22px 28px 26px}
+.demo-page.styled h1{color:#2453d4;font-size:1.6em}
+.demo-page.styled p,.demo-page.styled li{color:#333;line-height:1.8}
+.demo-page.styled a{color:#2453d4}
+.demo-page.styled button{padding:8px 18px;border:0;border-radius:6px;background:#2453d4;color:#fff;font-weight:500;font-size:14px}
+.tabs{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tablist{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg)}
+.tablist button{font:inherit;font-size:.84rem;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--sub);cursor:pointer;white-space:nowrap}
+.tablist button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tabs [role=tabpanel] .code{border:0;border-radius:0}
+.tabs .run{font-size:.8rem;color:var(--sub);padding:8px 16px;border-top:1px solid var(--border)}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.7}
+
+.sheet{border:1px solid var(--border);border-radius:10px;padding:4px 0}
+.sheet dl{margin:0} .sheet div{display:grid;grid-template-columns:9em 1fr;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.sheet div:last-child{border-bottom:0} .sheet dt{font-weight:700;font-size:.88rem} .sheet dd{margin:0;font-size:.92rem}
+@media (max-width:560px){.sheet div{grid-template-columns:1fr;gap:2px}}
+.stage-map{display:grid;gap:6px}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン"><a href="index.html">研究の流れ</a><a href="00-setup.html">00 準備</a><a href="01-web.html">01 Webのしくみ</a><a href="02-git.html">02 Git と GitHub</a><a href="03-python.html">03 Python で Web</a><a href="04-research-system.html">04 データ収集システム</a><a href="#top" aria-current="page">05 レポートの書き方</a></nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このページの進み具合</span><b class="pcount">0 / 13</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">05 レポートの書き方</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">全体</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>形と分量</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>書く順番</a></li><li class="nav-h">各章</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>タイトルと概要</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>はじめに</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>関連研究</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>方法</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>結果</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>考察</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>おわりに</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>参考文献</a></li><li class="nav-h">仕上げ</li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>図と表</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>文章のルール</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第5回</span><span>レポートの書き方</span></p>
+    <h1>レポートの書き方：2ページで研究を伝える</h1>
+    <p class="desc">集めたデータと考察を、学会の予稿（アブストラクト）と同じ形で、A4 2ページのレポートにまとめます。章ごとの役割、書く内容、分量、書き出しの型と例文を順に見ていきます。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約60分（執筆は別に3回程度）</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>研究の流れ、第4回</dd></div></dl>
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 13</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">全体</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>形と分量</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>書く順番</a></li><li class="nav-h">各章</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>タイトルと概要</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>はじめに</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>関連研究</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>方法</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>結果</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>考察</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>おわりに</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>参考文献</a></li><li class="nav-h">仕上げ</li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>図と表</a></li><li><a href="#step-12" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">12</span>文章のルール</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="13"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習</a></li></ul></details>
+    <section class="goals" aria-labelledby="goals-h"><h2 id="goals-h">このページで学ぶこと</h2><ul><li>2ページのレポートの章立てと、それぞれの分量がわかる</li><li>各章の役割と書くことを説明できる</li><li>「問い → 答え」の筋が通ったレポートを書ける</li><li>提出前に自分でチェックできる</li></ul></section>
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>レポートは、<a href="index.html">研究の流れ</a>の7つの段階を、決まった章立てで報告するものです。「次へ」か「自動再生」で、2ページのどこに何を書くかを見てみましょう。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 258" role="img" aria-label="2ページのレポートのどこに何の章を書くかの見取り図">
+<rect class="s fc" x="10" y="14" width="160" height="224" rx="3"/><rect class="s fc" x="190" y="14" width="160" height="224" rx="3"/>
+<text class="tm" x="90" y="250" text-anchor="middle">1ページ目</text><text class="tm" x="270" y="250" text-anchor="middle">2ページ目</text>
+<rect class="fs" x="18" y="22" width="144" height="22" rx="2"/><text class="t" x="23" y="35" style="font-size:9.5px">タイトル・著者</text><rect class="s sp" x="17" y="21" width="146" height="24" rx="3" style="stroke-width:2.6" data-s="1"/><rect class="fs" x="18" y="48" width="144" height="30" rx="2"/><text class="t" x="23" y="61" style="font-size:9.5px">概要</text><rect class="s sp" x="17" y="47" width="146" height="32" rx="3" style="stroke-width:2.6" data-s="1"/><rect class="fs" x="18" y="84" width="66" height="64" rx="2"/><text class="t" x="23" y="97" style="font-size:9.5px">1. はじめに</text><rect class="s sp" x="17" y="83" width="68" height="66" rx="3" style="stroke-width:2.6" data-s="2"/><rect class="fs" x="18" y="152" width="66" height="72" rx="2"/><text class="t" x="23" y="165" style="font-size:9.5px">2. 関連研究</text><rect class="s sp" x="17" y="151" width="68" height="74" rx="3" style="stroke-width:2.6" data-s="3"/><rect class="fs" x="88" y="84" width="74" height="140" rx="2"/><text class="t" x="93" y="97" style="font-size:9.5px">3. 方法</text><rect class="s sp" x="87" y="83" width="76" height="142" rx="3" style="stroke-width:2.6" data-s="4"/><rect class="fs" x="198" y="22" width="66" height="124" rx="2"/><text class="t" x="203" y="35" style="font-size:9.5px">4. 結果</text><rect class="s sp" x="197" y="21" width="68" height="126" rx="3" style="stroke-width:2.6" data-s="5"/><rect class="fs" x="198" y="150" width="66" height="74" rx="2"/><text class="t" x="203" y="163" style="font-size:9.5px">5. 考察</text><rect class="s sp" x="197" y="149" width="68" height="76" rx="3" style="stroke-width:2.6" data-s="6"/><rect class="fs" x="268" y="22" width="74" height="70" rx="2"/><text class="t" x="273" y="35" style="font-size:9.5px">5. 考察（つづき）</text><rect class="s sp" x="267" y="21" width="76" height="72" rx="3" style="stroke-width:2.6" data-s="6"/><rect class="fs" x="268" y="96" width="74" height="46" rx="2"/><text class="t" x="273" y="109" style="font-size:9.5px">6. おわりに</text><rect class="s sp" x="267" y="95" width="76" height="48" rx="3" style="stroke-width:2.6" data-s="7"/><rect class="fs" x="268" y="146" width="74" height="78" rx="2"/><text class="t" x="273" y="159" style="font-size:9.5px">参考文献</text><rect class="s sp" x="267" y="145" width="76" height="80" rx="3" style="stroke-width:2.6" data-s="8"/><rect class="s fc thin" x="204" y="44" width="54" height="40" rx="2"/><path class="s sp thin" d="M208 60L220 68L232 72L252 76"/><text class="tm" x="231" y="110" text-anchor="middle" style="font-size:8px">図1</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 8</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">2ページの見取り図</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>タイトル・概要：研究全体を200字ほどにまとめた「予告編」。1段で横いっぱいに書く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>はじめに：背景から問いへ。「なぜこの研究をするのか」と目的を書く（研究の流れ 1・3）</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>関連研究：先行研究で何がわかっていて、何がわかっていないか（研究の流れ 2）</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>方法：誰に、何を、どうやって測ったか。ほかの人が同じことをできるように書く（研究の流れ 4・5）</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>結果：わかった事実だけを、図表と数字で示す（研究の流れ 6）</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>考察：結果が何を意味するか。仮説・先行研究と比べ、限界も書く（研究の流れ 7）</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>おわりに：目的に対する答えを短くまとめ、今後の課題を書く</span></button></li><li><button type="button" data-go="8"><span class="fn">8</span><span>参考文献：本文で引用した文献を、番号順に並べる</span></button></li></ol>
+</div>
+<p>章が変わっても、<strong>「はじめにで立てた問いに、結果と考察で答え、おわりにでまとめる」</strong>という1本の筋が通っていることが大切です。</p>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>このページの例文は、<a href="{U["R"]}">研究の流れ</a>と<a href="{U["4"]}">第4回</a>で使ってきた「計算練習アプリ」の研究を、そのままレポートにしたものです。数値と文献は説明用の架空のものです。</p></div></aside>
+    </section>
+    <div class="part" id="part-1"><p>Part 1</p><h2>全体をつかむ</h2><p class="part-d">2ページの中に、何をどれだけ書くかを決めます。</p></div>
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 12</span></p>
+  <h2 id="h-1">レポートの形と分量</h2>
+  
+<p>このレポートは、学会の予稿（アブストラクト）と同じ形で、<strong>A4 で2ページ</strong>にまとめます。短いからこそ、研究の流れ全体を、むだなく1本の筋で書くことが大切です。</p>
+<div class="tbl stack"><table><thead><tr><th>章</th><th>分量の目安</th><th>研究の流れとの対応</th></tr></thead><tbody><tr><td data-label="章">タイトル・概要</td><td data-label="分量の目安">概要 150〜250字</td><td data-label="研究の流れとの対応">全体</td></tr><tr><td data-label="章">1. はじめに</td><td data-label="分量の目安">400〜500字</td><td data-label="研究の流れとの対応">1 テーマ、3 問いと仮説</td></tr><tr><td data-label="章">2. 関連研究</td><td data-label="分量の目安">300〜400字</td><td data-label="研究の流れとの対応">2 先行研究</td></tr><tr><td data-label="章">3. 方法</td><td data-label="分量の目安">600〜800字</td><td data-label="研究の流れとの対応">4 収集の準備、5 データ収集</td></tr><tr><td data-label="章">4. 結果</td><td data-label="分量の目安">500〜700字 ＋ 図表1〜2個</td><td data-label="研究の流れとの対応">6 分析</td></tr><tr><td data-label="章">5. 考察</td><td data-label="分量の目安">500〜700字</td><td data-label="研究の流れとの対応">7 考察</td></tr><tr><td data-label="章">6. おわりに</td><td data-label="分量の目安">150〜250字</td><td data-label="研究の流れとの対応">7 考察（次の課題）</td></tr><tr><td data-label="章">参考文献</td><td data-label="分量の目安">3〜6件</td><td data-label="研究の流れとの対応">2 先行研究</td></tr></tbody></table></div>
+<p>合計で本文 3,000〜3,500字と図表2〜3個が目安です。図表の大きさで入る文字数は変わるので、書きながら調整します。</p>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>指定の書式（テンプレート）がある場合は、必ずそちらに従ってください。指定がない場合は、A4・2段組（タイトルと概要は1段）・本文は明朝体 10〜10.5pt・見出しはゴシック体、がよく使われる形です。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Word の設定</p><div><p>Word でタイトルと概要だけを1段にするには、概要のあとに「レイアウト → 区切り → セクション区切り（現在の位置から）」を入れ、本文側のセクションだけを「段組み → 2段」にします。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：書く順番</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 12</span></p>
+  <h2 id="h-2">書く順番</h2>
+  
+<p>レポートは、<strong>上から順番に書かなくてかまいません</strong>。事実が決まっている章から書くと、迷わずに進められます。</p>
+<div class="tbl stack"><table><thead><tr><th>順番</th><th>章</th><th>理由</th></tr></thead><tbody><tr><td data-label="順番">1</td><td data-label="章">3. 方法</td><td data-label="理由">やったことを書くだけなので、最も書きやすい</td></tr><tr><td data-label="順番">2</td><td data-label="章">4. 結果</td><td data-label="理由">図表を先に作り、それを文章で説明する</td></tr><tr><td data-label="順番">3</td><td data-label="章">5. 考察</td><td data-label="理由">結果を見ながら、意味を考える</td></tr><tr><td data-label="順番">4</td><td data-label="章">1. はじめに・2. 関連研究</td><td data-label="理由">結果に合わせて、問いの立て方を整える</td></tr><tr><td data-label="順番">5</td><td data-label="章">6. おわりに</td><td data-label="理由">はじめにの目的と、結果・考察を対応させる</td></tr><tr><td data-label="順番">6</td><td data-label="章">タイトル・概要</td><td data-label="理由">全体ができてから、最後に要約する</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>書き始める前に、<a href="{U["R"]}#exercise">研究計画シート</a>と、<a href="{U["4"]}">第4回</a>で作ったグラフ・研究ノートを手元に置きましょう。レポートの材料はほとんどそこにあります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：タイトルと概要</a></div>
+</section><div class="part" id="part-3"><p>Part 2</p><h2>章ごとの書き方</h2><p class="part-d">章ごとに、役割・書くこと・型・例文の順に見ていきます。</p></div>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 12</span></p>
+  <h2 id="h-3">タイトルと概要</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>研究全体を一目で伝える「予告編」。多くの読者はここだけを読んで、本文を読むか決める</dd></div><div><dt>書くこと</dt><dd>タイトル：何を対象に、何を調べたか<br>概要：目的・方法・結果・結論を1〜2文ずつ</dd></div><div><dt>分量</dt><dd>概要 150〜250字</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="タイトル：〇〇を用いた△△が□□に与える影響
+概要：本研究では、〇〇を目的として、△△を対象に□□を行った。その結果、〜であった。このことから、〜と考えられる。今後は〜が課題である。">コピー</button></div><pre><code>タイトル：〇〇を用いた△△が□□に与える影響
+概要：本研究では、〇〇を目的として、△△を対象に□□を行った。その結果、〜であった。このことから、〜と考えられる。今後は〜が課題である。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">計算練習アプリを用いた2週間の練習が計算速度に与える影響
+
+概要：本研究では、計算練習アプリを用いた1日5分・2週間の練習が、計算の速さと正確さに与える影響を調べた。大学生10名を対象に、練習の成績を Web システムで毎日記録した。その結果、1問あたりの回答時間は1日目の平均4.1秒から14日目には2.9秒に短くなり、正答率は低下しなかった。一方で、問題形式への慣れが影響した可能性があり、練習を行わない群との比較が今後の課題である。</pre></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>概要に「〜について調べた」とだけ書いて、結果を書かないのはよくある失敗です。<strong>何がわかったのか</strong>を、数字を入れて必ず書きましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：1. はじめに</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 12</span></p>
+  <h2 id="h-4">1. はじめに</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>なぜこの研究をするのかを説明し、目的（問い）を示す</dd></div><div><dt>書くこと</dt><dd>①背景：テーマが大切な理由<br>②課題：まだわかっていないこと<br>③目的：この研究で明らかにすること</dd></div><div><dt>分量</dt><dd>400〜500字</dd></div><div><dt>材料</dt><dd>研究計画シートの「テーマ」「RQ」「仮説」</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="近年、〇〇が注目されている[1]。
+〇〇については、〜であることが報告されている[2]。
+しかし、〜については十分に明らかになっていない。
+そこで本研究では、〜を明らかにすることを目的とする。">コピー</button></div><pre><code>近年、〇〇が注目されている[1]。
+〇〇については、〜であることが報告されている[2]。
+しかし、〜については十分に明らかになっていない。
+そこで本研究では、〜を明らかにすることを目的とする。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">計算練習アプリは、短い時間で手軽に取り組める学習方法として広く使われている。先行研究では、フラッシュ暗算などの継続的な計算練習によって、計算の速さが向上することが報告されている[1]。しかし、スマートフォンで1日数分だけ行うような短時間の練習でも、同じような効果が得られるかは十分に調べられていない。
+そこで本研究では、1日5分・2週間の計算練習によって、1問あたりの回答時間が短くなるかを明らかにすることを目的とする。</pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>「目的とする」の1文は、<strong>結果・考察・おわりにと必ず対応させます</strong>。ここで立てた問いに、レポートの最後で答える、というのが全体の筋です。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：2. 関連研究</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 12</span></p>
+  <h2 id="h-5">2. 関連研究</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>先行研究で何がわかっているかを示し、この研究の位置づけ（新しさ）を明らかにする</dd></div><div><dt>書くこと</dt><dd>①似た研究の紹介（誰が、何を、どうして、何がわかったか）<br>②この研究との違い</dd></div><div><dt>分量</dt><dd>300〜400字。2〜4件の研究を紹介する</dd></div><div><dt>材料</dt><dd>研究の流れ Step 2 でまとめた文献リスト</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="〇〇ら[2]は、△△を対象に□□を行い、〜であることを示した。
+また、〇〇[3]は〜を報告している。
+これらの研究は〜を対象としているのに対し、本研究は〜という点で異なる。">コピー</button></div><pre><code>〇〇ら[2]は、△△を対象に□□を行い、〜であることを示した。
+また、〇〇[3]は〜を報告している。
+これらの研究は〜を対象としているのに対し、本研究は〜という点で異なる。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">山田ら[1]は、小学生を対象に8週間のフラッシュ暗算の練習を行い、計算速度が向上したことを示した。また、佐藤[2]は、紙のドリルとタブレット教材で練習効果に差がないことを報告している。これらの研究は数週間以上の長い練習を対象としているのに対し、本研究は1日5分・2週間という短時間の練習を対象とする点で異なる。</pre></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>先行研究を並べるだけで終わらないようにします。最後に「<strong>本研究は〜という点で異なる</strong>」と書くことで、自分の研究をする意味が伝わります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：3. 方法</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 12</span></p>
+  <h2 id="h-6">3. 方法</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>何を、どうやって調べたかを、<strong>ほかの人が同じことをできるくらい具体的に</strong>書く</dd></div><div><dt>書くこと</dt><dd>①対象者（人数・属性）<br>②期間と手順<br>③記録の方法（作ったシステム）<br>④測った項目<br>⑤分析の方法<br>⑥倫理的配慮</dd></div><div><dt>分量</dt><dd>600〜800字。小見出し（3.1、3.2…）で分けると読みやすい</dd></div><div><dt>材料</dt><dd>第4回で作ったシステム、研究ノート</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="3.1 対象者：〇〇の大学生△名を対象とした。
+3.2 手順：参加者は、〜日間、毎日〜を行った。
+3.3 記録システム：記録には、Python（Flask）と SQLite で作成した Web システムを用いた。
+3.4 分析方法：1日目と〇日目の△△を、対応のある t 検定で比較した。
+3.5 倫理的配慮：参加者には研究の目的と〜を説明し、同意を得た。">コピー</button></div><pre><code>3.1 対象者：〇〇の大学生△名を対象とした。
+3.2 手順：参加者は、〜日間、毎日〜を行った。
+3.3 記録システム：記録には、Python（Flask）と SQLite で作成した Web システムを用いた。
+3.4 分析方法：1日目と〇日目の△△を、対応のある t 検定で比較した。
+3.5 倫理的配慮：参加者には研究の目的と〜を説明し、同意を得た。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">3.1 対象者　大学生10名（19〜22歳）を対象とした。
+3.2 手順　参加者は14日間、毎日1回、計算練習アプリで20問の計算問題に取り組んだ。
+3.3 記録システム　練習の結果は、Python（Flask）と SQLite で作成した Web システムに、参加者が自分のスマートフォンから入力した。入力値は、システム上で範囲を確認したうえで保存した。
+3.4 測定項目と分析　問題数・正答数・回答時間を記録し、1問あたりの回答時間と正答率を算出した。1日目と14日目の値を、対応のある t 検定で比較した。
+3.5 倫理的配慮　参加者には、研究の目的、参加は自由で途中でやめられること、データは ID で管理し個人を特定しないことを説明し、同意を得た。</pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>自分で作ったシステムは、方法の章で「何で作り、どんな工夫をしたか」を短く書けます。画面の図を1枚入れると、伝わりやすくなります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：4. 結果</a></div>
+</section>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 12</span></p>
+  <h2 id="h-7">4. 結果</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>分析でわかった<strong>事実だけ</strong>を示す。解釈は書かない</dd></div><div><dt>書くこと</dt><dd>①データの件数（欠けたデータがあれば、その数と理由）<br>②主な数値（平均など）と図表<br>③検定などの結果</dd></div><div><dt>分量</dt><dd>500〜700字 ＋ 図表1〜2個</dd></div><div><dt>材料</dt><dd>第4回の pandas の集計、グラフ</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="分析の対象は、〇名の△件の記録であった。
+図1に、〇〇の日ごとの平均を示す。
+〇日目の平均は△、□日目の平均は◇であった。
+対応のある t 検定の結果、有意な差がみられた（p &lt; .05）。">コピー</button></div><pre><code>分析の対象は、〇名の△件の記録であった。
+図1に、〇〇の日ごとの平均を示す。
+〇日目の平均は△、□日目の平均は◇であった。
+対応のある t 検定の結果、有意な差がみられた（p &lt; .05）。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">記録の欠損はなく、10名分の140件の記録を分析の対象とした。図1に、1問あたりの回答時間の日ごとの平均を示す。回答時間は1日目の平均4.12秒から、14日目には2.86秒に短くなった。対応のある t 検定の結果、1日目と14日目の間に有意な差がみられた（p < .05）。正答率は1日目が78%、14日目が91%であり、低下はみられなかった。</pre></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>結果の章に「練習の効果があったと考えられる」のような解釈を書くのは、よくある失敗です。解釈は次の考察に書きます。結果は「〜であった」「〜がみられた」で終えます。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">結果の章に書くものとして、正しいのはどれ？</p><div class="opts"><button class="opt" type="button">1日目の平均は4.12秒、14日目は2.86秒であった</button><button class="opt" type="button">練習によって計算が自動化されたと考えられる</button><button class="opt" type="button">今後は比較群を設けたい</button></div><p class="fb">結果は事実だけ。2つ目は考察、3つ目はおわりにに書きます。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：5. 考察</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 12</span></p>
+  <h2 id="h-8">5. 考察</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>結果が<strong>何を意味するのか</strong>を説明する。レポートの中で最も自分の考えが表れる章</dd></div><div><dt>書くこと</dt><dd>①目的・仮説に対する答え<br>②先行研究との比較<br>③そうなった理由の考察<br>④研究の限界</dd></div><div><dt>分量</dt><dd>500〜700字</dd></div><div><dt>材料</dt><dd>研究の流れ Step 7 の表、研究ノート</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="本研究の結果から、〜であることが示された。これは仮説を支持する。
+この結果は、〇〇ら[1]の報告と一致する。
+この理由として、〜が考えられる。
+ただし、本研究には〜という限界がある。">コピー</button></div><pre><code>本研究の結果から、〜であることが示された。これは仮説を支持する。
+この結果は、〇〇ら[1]の報告と一致する。
+この理由として、〜が考えられる。
+ただし、本研究には〜という限界がある。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">本研究の結果から、1日5分・2週間という短時間の練習でも、1問あたりの回答時間が短くなることが示された。また、正答率は低下しておらず、速さと正確さを両立できていたと考えられる。これは、長期間の練習で計算速度が向上したとする山田ら[1]の報告と一致する。
+この理由として、くり返しの練習によって計算の手順が自動化された可能性が考えられる。一方で、毎日同じ形式の問題に取り組んだため、問題形式への慣れが影響した可能性もある。また、対象者が10名と少なく、練習を行わない群と比較していないため、練習以外の要因の影響は否定できない。</pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>研究ノートが考察で役に立ちます。「8日目に全員が遅くなった」のような変わった点は、ノートと照らし合わせると理由が見つかることがあります。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>データで言えること以上のことを書かないようにします。10人のデータから「計算練習アプリはすべての人に効果がある」とは言えません。「本研究の対象者においては」のように、範囲を限って書きます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：6. おわりに</a></div>
+</section>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 12</span></p>
+  <h2 id="h-9">6. おわりに</h2>
+  
+<div class="sheet"><dl><div><dt>役割</dt><dd>目的に対する答えを短くまとめ、次につなげる</dd></div><div><dt>書くこと</dt><dd>①目的の再確認<br>②わかったことのまとめ（1〜2文）<br>③今後の課題</dd></div><div><dt>分量</dt><dd>150〜250字</dd></div></dl></div>
+<div class="code"><div class="code-h"><span>書き出しの型（コピーして使える）</span><button class="copy" type="button" data-copy="本研究では、〜を目的として、〜を行った。
+その結果、〜であることが明らかになった。
+今後は、〜について検討する必要がある。">コピー</button></div><pre><code>本研究では、〜を目的として、〜を行った。
+その結果、〜であることが明らかになった。
+今後は、〜について検討する必要がある。</code></pre></div>
+<div class="code out"><div class="code-h"><span>例文（例文の数値・文献は、説明用の架空のものです。）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">本研究では、短時間の計算練習が計算速度に与える影響を明らかにすることを目的として、大学生10名に2週間の練習を行ってもらった。その結果、1問あたりの回答時間は短くなり、正答率は維持された。今後は、練習を行わない群との比較や、問題形式を毎日変えた条件での検討が必要である。</pre></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>はじめにの「目的」の文と、おわりにの最初の文を並べて読んでみましょう。同じ問いを指していれば、レポートの筋が通っています。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：参考文献</a></div>
+</section>
+<section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Step 10<span>/ 12</span></p>
+  <h2 id="h-10">参考文献</h2>
+  
+<p>本文で引用した文献は、最後に一覧にします。本文中では <code>[1]</code> のように番号をつけ、<strong>本文に出てきた順</strong>に番号をふるのが一般的です。</p>
+<div class="code out"><div class="code-h"><span>書式の例（著者名・タイトルは架空）</span></div><pre style="white-space:pre-wrap;font-family:var(--font);font-size:.92rem;line-height:1.9">[1] 山田太郎, 佐藤花子: フラッシュ暗算の継続練習が計算速度に与える効果, 教育工学研究, Vol.12, No.3, pp.45-52 (2020).
+[2] 佐藤次郎: 紙とタブレットによる計算練習の比較, 情報教育シンポジウム論文集, pp.101-104 (2022).
+[3] 〇〇大学: 研究倫理に関するガイドライン, https://www.example.ac.jp/ethics/ (2026年11月14日閲覧).</pre></div>
+<div class="tbl stack"><table><thead><tr><th>書くもの</th><th>論文</th><th>Web ページ</th></tr></thead><tbody><tr><td data-label="書くもの">著者</td><td data-label="論文">全員（多い場合は「ほか」）</td><td data-label="Web ページ">作成した組織や人</td></tr><tr><td data-label="書くもの">タイトル</td><td data-label="論文">論文名</td><td data-label="Web ページ">ページ名</td></tr><tr><td data-label="書くもの">掲載先</td><td data-label="論文">学会誌名・巻・号・ページ</td><td data-label="Web ページ">URL</td></tr><tr><td data-label="書くもの">年</td><td data-label="論文">発行年</td><td data-label="Web ページ">閲覧した日</td></tr></tbody></table></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>書式は学会やレポートの指定によって違います。指定があればそれに従い、なければ<strong>1つのレポートの中で書き方をそろえる</strong>ことが大切です。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>読んでいない文献を、ほかの論文の引用から孫引きしないようにしましょう。また、生成 AI が示した文献は、実在するかを必ず CiNii Research などで確かめてください。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-11">次へ：図と表</a></div>
+</section><div class="part" id="part-11"><p>Part 3</p><h2>仕上げる</h2><p class="part-d">図表、文章のルール、提出前のチェックです。</p></div>
+<section class="step" id="step-11" data-step="11" aria-labelledby="h-11">
+  <p class="step-no">Step 11<span>/ 12</span></p>
+  <h2 id="h-11">図と表</h2>
+  
+<p>2ページのレポートでは、図表1つが数百字分の説明に相当します。<strong>言いたいことが一目でわかる図表</strong>を、厳選して入れます。</p>
+<div class="tbl"><table><thead><tr><th>ルール</th><th>内容</th></tr></thead><tbody><tr><td>番号とタイトル</td><td>図は「図1 〜」を<strong>図の下</strong>に、表は「表1 〜」を<strong>表の上</strong>に書く</td></tr><tr><td>本文から参照する</td><td>「図1に示すように」のように、本文で必ず触れる。触れない図表は入れない</td></tr><tr><td>軸と単位</td><td>グラフには軸の名前と単位（秒、% など）を必ず入れる</td></tr><tr><td>読める大きさ</td><td>2段組の1段の幅でも、文字が読める大きさにする</td></tr><tr><td>白黒でもわかる</td><td>印刷されることを考え、色だけでなく線の種類や記号でも区別する</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p><a href="{U["4"]}">第4回</a>の matplotlib で保存するときに <code>dpi=200</code> 以上にしておくと、Word に貼っても文字がぼやけません。Word では「図表番号の挿入」を使うと、番号を自動でふれます。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q">表のタイトル（表1 〜）を書く場所は？</p><div class="opts"><button class="opt" type="button">表の上</button><button class="opt" type="button">表の下</button><button class="opt" type="button">本文の最後</button></div><p class="fb">表は上、図は下に書くのが一般的です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-12">次へ：文章のルールと提出前のチェック</a></div>
+</section>
+<section class="step" id="step-12" data-step="12" aria-labelledby="h-12">
+  <p class="step-no">Step 12<span>/ 12</span></p>
+  <h2 id="h-12">文章のルールと提出前のチェック</h2>
+  
+<p>レポートは、<strong>誰が読んでも同じ意味に受け取れる</strong>ことを目指して書きます。</p>
+<div class="tbl stack"><table><thead><tr><th>ルール</th><th>よくない例</th><th>よい例</th></tr></thead><tbody><tr><td data-label="ルール">「である」調でそろえる</td><td data-label="よくない例">〜しました。〜です。</td><td data-label="よい例">〜した。〜である。</td></tr><tr><td data-label="ルール">1文は短く（60字くらいまで）</td><td data-label="よくない例">〜で、〜ので、〜けど、〜した。</td><td data-label="よい例">2〜3文に分ける</td></tr><tr><td data-label="ルール">あいまいな言葉を避ける</td><td data-label="よくない例">かなり速くなった</td><td data-label="よい例">平均で1.26秒（約30%）短くなった</td></tr><tr><td data-label="ルール">事実と意見を分ける</td><td data-label="よくない例">練習は効果的だった（結果の章で）</td><td data-label="よい例">結果：短くなった／考察：効果があったと考えられる</td></tr><tr><td data-label="ルール">話し言葉を使わない</td><td data-label="よくない例">すごく、だいたい、〜とか</td><td data-label="よい例">非常に、約、〜など</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>生成 AI に文章を整えてもらうことはできますが、<strong>中身（データ・考察・文献）は必ず自分のものを使い</strong>、出てきた文章が事実と合っているかを確かめてください。AI を使ってよい範囲は、授業や指導教員の決まりに従いましょう。</p></div></aside>
+<h3>提出前のチェックリスト</h3>
+<div class="tbl"><table><thead><tr><th>チェック</th><th>確かめ方</th></tr></thead><tbody><tr><td>はじめにの目的と、おわりにのまとめが対応している</td><td>2つの文を並べて読む</td></tr><tr><td>概要に結果が数字入りで書かれている</td><td>概要だけを読んで、何がわかったか言えるか</td></tr><tr><td>方法を読めば、ほかの人が同じことをできる</td><td>人数・期間・手順・項目・分析方法がそろっているか</td></tr><tr><td>結果に解釈が混ざっていない</td><td>「考えられる」が結果の章にないか</td></tr><tr><td>考察に限界が書かれている</td><td>人数や条件など、言えないことを書いたか</td></tr><tr><td>図表に番号・タイトル・単位があり、本文で触れている</td><td>図表ごとに確認</td></tr><tr><td>本文の [番号] と参考文献が一致している</td><td>番号を1つずつ照らし合わせる</td></tr><tr><td>2ページに収まり、誤字がない</td><td>声に出して読む、印刷して読む</td></tr></tbody></table></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="12"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="13" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：自分の研究のレポートを書く</h2>
+  <p>次の骨組みをコピーして Word に貼り、Step 2 の順番で埋めていきます。</p>
+  <div class="code"><div class="code-h"><span>レポートの骨組み（コピーして使う）</span><button class="copy" type="button" data-copy="タイトル：
+著者：
+
+概要（150〜250字）：
+　目的：
+　方法：
+　結果：
+　結論と課題：
+
+1. はじめに（400〜500字）
+　背景：
+　まだわかっていないこと：
+　目的：本研究では、〜を明らかにすることを目的とする。
+
+2. 関連研究（300〜400字）
+　[1]
+　[2]
+　本研究との違い：
+
+3. 方法（600〜800字）
+　3.1 対象者：
+　3.2 手順：
+　3.3 記録システム：
+　3.4 測定項目と分析方法：
+　3.5 倫理的配慮：
+
+4. 結果（500〜700字 ＋ 図表）
+　データの件数：
+　主な数値：
+　図1：
+
+5. 考察（500〜700字）
+　目的・仮説に対する答え：
+　先行研究との比較：
+　理由：
+　限界：
+
+6. おわりに（150〜250字）
+　まとめ：
+　今後の課題：
+
+参考文献
+[1]
+[2]">コピー</button></div><pre><code>タイトル：
+著者：
+
+概要（150〜250字）：
+　目的：
+　方法：
+　結果：
+　結論と課題：
+
+1. はじめに（400〜500字）
+　背景：
+　まだわかっていないこと：
+　目的：本研究では、〜を明らかにすることを目的とする。
+
+2. 関連研究（300〜400字）
+　[1]
+　[2]
+　本研究との違い：
+
+3. 方法（600〜800字）
+　3.1 対象者：
+　3.2 手順：
+　3.3 記録システム：
+　3.4 測定項目と分析方法：
+　3.5 倫理的配慮：
+
+4. 結果（500〜700字 ＋ 図表）
+　データの件数：
+　主な数値：
+　図1：
+
+5. 考察（500〜700字）
+　目的・仮説に対する答え：
+　先行研究との比較：
+　理由：
+　限界：
+
+6. おわりに（150〜250字）
+　まとめ：
+　今後の課題：
+
+参考文献
+[1]
+[2]</code></pre></div>
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">進め方</span><h3>3回に分けて書く</h3></div>
+    <ol class="steps">
+      <li><strong>1回目</strong>：方法と結果を書き、図表を作る</li>
+      <li><strong>2回目</strong>：考察・はじめに・関連研究・おわりにを書く</li>
+      <li><strong>3回目</strong>：タイトルと概要を書き、Step 12 のチェックリストで見直す。ほかの人と交換して読み合う</li>
+    </ol>
+    <aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>読み合うときは、「はじめにの目的は何か」「結果で何がわかったか」を相手に説明してもらいましょう。自分が伝えたかったことと違えば、そこが直すところです。</p></div></aside>
+  </div>
+  <div class="step-foot"><button class="done" type="button" data-step="13"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+    
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：章の役割をひとことで</h2>
+  <div class="tbl stack"><table><thead><tr><th>章</th><th>ひとことで</th><th>分量</th></tr></thead><tbody><tr><td data-label="章">タイトル・概要</td><td data-label="ひとことで">研究全体の予告編</td><td data-label="分量">概要 150〜250字</td></tr><tr><td data-label="章">1. はじめに</td><td data-label="ひとことで">なぜやるのか、何を明らかにするのか</td><td data-label="分量">400〜500字</td></tr><tr><td data-label="章">2. 関連研究</td><td data-label="ひとことで">何がわかっていて、どこが新しいのか</td><td data-label="分量">300〜400字</td></tr><tr><td data-label="章">3. 方法</td><td data-label="ひとことで">誰に、何を、どうやって</td><td data-label="分量">600〜800字</td></tr><tr><td data-label="章">4. 結果</td><td data-label="ひとことで">わかった事実だけ</td><td data-label="分量">500〜700字 ＋ 図表</td></tr><tr><td data-label="章">5. 考察</td><td data-label="ひとことで">事実が何を意味するか、どこまで言えるか</td><td data-label="分量">500〜700字</td></tr><tr><td data-label="章">6. おわりに</td><td data-label="ひとことで">問いへの答えと、次の課題</td><td data-label="分量">150〜250字</td></tr><tr><td data-label="章">参考文献</td><td data-label="ひとことで">引用した文献の一覧</td><td data-label="分量">3〜6件</td></tr></tbody></table></div>
+  <aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>シリーズのまとめ</p><div><p>これで、研究の流れの最後までたどり着きました。おわりにに書いた「今後の課題」が、次の研究テーマになります。<a href="index.html">研究の流れ</a>に戻って、次のサイクルを始めましょう。</p></div></aside>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="04-research-system.html" style="text-decoration:none;color:var(--text)"><small>前のレッスン</small>第4回 研究データを集めるシステム</a>
+    <a class="pg next-l" href="index.html" style="text-decoration:none;color:var(--text)"><small>次のサイクルへ</small>研究の流れ</a>
+  </nav>
+</section>
+  </article>
+  <aside class="toc" aria-label="このページの内容"><p>このページの内容</p><ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">形と分量</a></li><li><a href="#step-2" data-toc="step-2">書く順番</a></li><li><a href="#step-3" data-toc="step-3">タイトルと概要</a></li><li><a href="#step-4" data-toc="step-4">はじめに</a></li><li><a href="#step-5" data-toc="step-5">関連研究</a></li><li><a href="#step-6" data-toc="step-6">方法</a></li><li><a href="#step-7" data-toc="step-7">結果</a></li><li><a href="#step-8" data-toc="step-8">考察</a></li><li><a href="#step-9" data-toc="step-9">おわりに</a></li><li><a href="#step-10" data-toc="step-10">参考文献</a></li><li><a href="#step-11" data-toc="step-11">図と表</a></li><li><a href="#step-12" data-toc="step-12">文章のルール</a></li><li><a href="#exercise" data-toc="exercise">演習</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul></aside>
+</div>
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-report-progress",TOTAL=13,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="13"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+
+  /* 表示結果のデモ */
+  document.querySelectorAll(".demo").forEach(function(d){
+    var page=d.querySelector(".demo-page"),t=d.querySelector("[data-css-toggle]"),like=d.querySelector(".like"),n=0;
+    if(t)t.addEventListener("click",function(){var on=page.classList.toggle("styled");t.textContent=on?"CSS を外す":"CSS を当てる";t.setAttribute("aria-pressed",on)});
+    if(like&&page.dataset.js==="on")like.addEventListener("click",function(){n++;like.textContent="いいね "+n});
+    var a=d.querySelector(".demo-page a");if(a)a.addEventListener("click",function(e){e.preventDefault()});
+  });
+  /* 言語タブ */
+  document.querySelectorAll("[data-tabs]").forEach(function(box){
+    var tabs=[].slice.call(box.querySelectorAll("[role=tab]")),panels=[].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function sel(i){tabs.forEach(function(t,k){t.setAttribute("aria-selected",k===i);t.tabIndex=k===i?0:-1});panels.forEach(function(p,k){p.hidden=k!==i})}
+    tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(i)});t.addEventListener("keydown",function(e){if(e.key==="ArrowRight"){sel((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}if(e.key==="ArrowLeft"){var k=(i-1+tabs.length)%tabs.length;sel(k);tabs[k].focus()}})});
+    sel(0);
+  });
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

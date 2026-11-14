@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Webのしくみ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン">
+      <a href="index.html">研究の流れ</a>
+      <a href="00-setup.html">00 準備</a>
+      <a href="#top" aria-current="page">01 Webのしくみ</a>
+      <a href="02-git.html">02 Git と GitHub</a>
+      <a href="03-python.html">03 Python で Web</a>
+      <a href="04-research-system.html">04 データ収集システム</a>
+      <a href="05-report.html">05 レポートの書き方</a>
+    </nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このレッスンの進み具合</span><b class="pcount">0 / 10</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">01 Webのしくみ</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>URLを入力する</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>電波でインターネットへ出る</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>DNSで住所を調べる</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>TCPで接続する</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>TLSで暗号化する</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>HTTPリクエストを送る</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>サーバーがページを用意する</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>HTTPレスポンスが返る</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>ブラウザが表示する</a></li><li class="nav-h">セキュリティ</li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">S1</span>公開鍵暗号</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">S2</span>セッションとCookie</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第1回</span><span>Webのしくみ</span></p>
+    <h1>スマホでURLを開いてから、ページが表示されるまで</h1>
+    <p class="desc">リンクをタップしてから画面が出るまでの約1秒。そのあいだにスマホとサーバーが何をしているのかを9つの段階に分けてたどり、後半では通信を守るセキュリティのしくみを見ていきます。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約60分</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>スマホでWebサイトを見たことがある</dd></div></dl>
+
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 10</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>URLを入力する</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>電波でインターネットへ出る</a></li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>DNSで住所を調べる</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>TCPで接続する</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>TLSで暗号化する</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>HTTPリクエストを送る</a></li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>サーバーがページを用意する</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>HTTPレスポンスが返る</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>ブラウザが表示する</a></li><li class="nav-h">セキュリティ</li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">S1</span>公開鍵暗号</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">S2</span>セッションとCookie</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul></details>
+
+    <section class="goals" aria-labelledby="goals-h">
+      <h2 id="goals-h">このレッスンで学ぶこと</h2>
+      <ul>
+        <li>スマホとサーバーが通信する流れを、順番に説明できる</li>
+        <li>DNS・TCP・TLS・HTTP が、それぞれ何の係かを言える</li>
+        <li>公開鍵暗号とセッションが、何を守っているのかを説明できる</li>
+        <li>開発者ツールやターミナルで、実際の通信を観察できる</li>
+      </ul>
+    </section>
+
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>Web に登場するのは、お願いする側・応える側・つなぐ道の3者だけです。</p>
+      <dl class="roles">
+        <div><dt>クライアント<span>client</span></dt><dd>スマホや PC の中のブラウザ（Safari、Chrome など）</dd></div>
+        <div><dt>サーバー<span>server</span></dt><dd>Webページのデータを持ち、24時間動いているコンピュータ</dd></div>
+        <div><dt>ネットワーク<span>network</span></dt><dd>Wi-Fi、携帯の電波、光ファイバー、世界中のルーター</dd></div>
+      </dl>
+      <figure class="fig"><svg viewBox="0 0 360 205" role="img" aria-label="スマホからサーバーへリクエストを送り、サーバーからレスポンスが返る図">
+<path class="s" d="M44 86V30H320V84" marker-end="url(#ar)"/>
+<text class="t tb" x="182" y="22" text-anchor="middle">① リクエスト（注文）</text>
+<path class="s sp" d="M306 86V58H58V84" marker-end="url(#arp)"/>
+<text class="t tb tp" x="182" y="51" text-anchor="middle">② レスポンス（料理）</text>
+<path class="fs" d="M125 152a22 22 0 0 1 0-44a30 30 0 0 1 55-14a26 26 0 0 1 50 14a22 22 0 0 1 0 44z"/>
+<text class="t" x="178" y="136" text-anchor="middle">ネットワーク</text>
+<use href="#i-phone" x="24" y="92" width="40" height="64"/>
+<use href="#i-server" x="292" y="92" width="56" height="64"/>
+<text class="t tb" x="44" y="180" text-anchor="middle">クライアント</text><text class="tm" x="4" y="197" text-anchor="start">スマホのブラウザ</text>
+<text class="t tb" x="320" y="180" text-anchor="middle">サーバー</text><text class="tm" x="354" y="197" text-anchor="end">ページを持つPC</text>
+</svg><figcaption>Webは「注文して、料理が届く」のくり返し</figcaption></figure>
+      <p>この「注文して、料理が届く」を細かく分けると、次の9段階になります。ボタンを押すと、データの小包（黄色い丸）が順番に動きます。</p>
+      <div class="sim" id="sim">
+        <div class="sim-head">
+          <div class="urlbar" aria-label="アドレスバー"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>https://www.example.jp/news/</span></div>
+          <button class="btn" id="play" type="button">ページを開く</button>
+        </div>
+        <div class="track" aria-hidden="true">
+        <div class="rail"></div>
+        <div class="rail-up"></div>
+        <div class="node n-dns" id="nd-dns">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></div>
+          <span class="lbl">DNSサーバー</span>
+        </div>
+        <div class="node n-phone" id="nd-phone">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+          <span class="lbl">スマホ</span>
+        </div>
+        <div class="node n-router"><div class="dot"></div><span class="lbl">基地局</span></div>
+        <div class="node n-web" id="nd-web">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><path d="M8 6.5h.01M8 17.5h.01"/></svg></div>
+          <span class="lbl">Webサーバー</span>
+        </div>
+        <div class="packet" id="packet"></div>
+      </div>
+        <ol class="log" id="log" aria-live="polite">
+        <li class="on"><span class="no">1</span><span class="dir">スマホの中</span><span class="msg">アドレスバーに URL を入力</span></li>
+        <li class="on"><span class="no">2</span><span class="dir">スマホ → 基地局</span><span class="msg">電波でインターネットへ出る</span></li>
+        <li class="on"><span class="no">3</span><span class="dir">スマホ ⇄ DNS</span><span class="msg"><code>www.example.jp</code> の住所は？ → <code>203.0.113.10</code></span></li>
+        <li class="on"><span class="no">4</span><span class="dir">スマホ ⇄ サーバー</span><span class="msg">TCP であいさつ（<code>SYN</code> / <code>SYN-ACK</code> / <code>ACK</code>）</span></li>
+        <li class="on"><span class="no">5</span><span class="dir">スマホ ⇄ サーバー</span><span class="msg">TLS で証明書を確認し、暗号化を始める</span></li>
+        <li class="on"><span class="no">6</span><span class="dir">スマホ → サーバー</span><span class="msg"><code>GET /news/</code> をください</span></li>
+        <li class="on"><span class="no">7</span><span class="dir">サーバーの中</span><span class="msg">ページを用意する</span></li>
+        <li class="on"><span class="no">8</span><span class="dir">サーバー → スマホ</span><span class="msg"><code>200 OK</code> と HTML が届く</span></li>
+        <li class="on"><span class="no">9</span><span class="dir">スマホの中</span><span class="msg">ブラウザが組み立てて表示</span></li>
+      </ol>
+        <p class="sim-note">各行をタップすると、その段階の解説へ移動します。www.example.jp と 203.0.113.10 は説明用の架空のアドレスです。</p>
+      </div>
+    </section>
+
+    
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 9</span></p>
+  <h2 id="h-1">URLを入力する</h2>
+  
+<p>ブラウザ（Safari や Chrome）に入力する URL は、<strong>どのサーバーの、どこにあるデータを、どんな方法で</strong>もらうかを1行にまとめたものです。</p>
+<div class="anatomy" role="img" aria-label="URLの構造">
+  <div><code>https://</code><span>スキーム<br>通信の方法</span></div>
+  <div><code>www.example.jp</code><span>ドメイン名<br>サーバーの名前</span></div>
+  <div><code>/news/</code><span>パス<br>サーバーの中の場所</span></div>
+</div>
+<figure class="fig"><svg viewBox="0 0 360 200" role="img" aria-label="URLを封筒の宛名にたとえた図">
+<rect class="s fc" x="16" y="14" width="328" height="176" rx="10"/>
+<text class="tm" x="40" y="46">宛先</text>
+<rect class="fy" x="268" y="32" width="56" height="62" rx="3"/><rect class="s thin" x="272" y="36" width="48" height="54" rx="2"/>
+<text class="t mono tb" x="296" y="69" text-anchor="middle">https</text>
+<text class="tm" x="296" y="114" text-anchor="middle">送り方</text>
+<text class="t mono" x="40" y="88" style="font-size:17px">www.example.jp</text>
+<path class="s sp" d="M38 99H232"/><text class="tm" x="40" y="118">届け先の建物（ドメイン名）</text>
+<text class="t mono" x="40" y="152" style="font-size:17px">/news/</text>
+<path class="s sl" d="M38 163H232"/><text class="tm" x="40" y="181">建物の中の部屋（パス）</text>
+</svg><figcaption>URLは手紙の宛名と同じつくり</figcaption></figure>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>手紙の宛名書きです。ドメイン名が届け先の建物、パスが建物の中の部屋、スキームが「書留で」のような送り方にあたります。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：電波でインターネットへ出る</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 9</span></p>
+  <h2 id="h-2">電波でインターネットへ出る</h2>
+  
+<p>スマホは電波でデータを送ります。Wi-Fi なら家や大学の<dfn>ルーター</dfn>へ、4G・5G なら近くの<dfn>基地局</dfn>へ届き、そこから光ファイバーを通ってインターネットへ出ていきます。</p>
+<p>インターネットは1本の線ではなく、世界中のルーターがつながった網です。データは<dfn>パケット</dfn>という小包に分けられ、ルーターからルーターへバケツリレーで運ばれます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 160" role="img" aria-label="パケットがルーターを経由してサーバーへ届くアニメーション">
+<text class="tm" x="206" y="16" text-anchor="middle">インターネット（ルーターの網）</text>
+<g class="s sl"><path d="M150 50L262 52M150 50L170 140L205 112L250 136L326 98M262 52L310 26"/></g>
+<g class="s sl"><path d="M40 97H66M106 97L150 50L205 112L262 52L326 98"/></g>
+<path class="s sp hlw" d="M40 97H66" data-s="2-6"/><path class="s sp hlw" d="M106 97L150 50" data-s="3-6"/><path class="s sp hlw" d="M150 50L205 112" data-s="4-6"/><path class="s sp hlw" d="M205 112L262 52" data-s="5-6"/><path class="s sp hlw" d="M262 52L326 98" data-s="6"/>
+<g class="s fc"><circle cx="150" cy="50" r="7"/><circle cx="205" cy="112" r="7"/><circle cx="262" cy="52" r="7"/><circle cx="170" cy="140" r="6"/><circle cx="250" cy="136" r="6"/><circle cx="310" cy="26" r="6"/></g>
+<use href="#i-phone" x="6" y="70" width="34" height="54"/>
+<rect class="s fc" x="66" y="86" width="40" height="22" rx="4"/><path class="s" d="M74 86V76M98 86V76"/>
+<use href="#i-server" x="302" y="74" width="48" height="48"/>
+<text class="t" x="23" y="142" text-anchor="middle">スマホ</text><text class="t" x="86" y="128" text-anchor="middle">ルーター</text><text class="t" x="326" y="142" text-anchor="middle">サーバー</text>
+<g data-at="1:12,89|2:75,89|3:139,42|4:194,104|5:251,44|6:315,90"><rect class="fy s thin" width="22" height="16" rx="3"/></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 6</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">パケットの旅</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>スマホがデータを小包（パケット）に分け、宛先の IP アドレスを書く</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>電波でルーター・基地局へ送る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>ルーターが宛先を見て、次のルーターへ渡す</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>次のルーターへ（バケツリレー）</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>道はいくつもあり、混雑を避けながら進む</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>サーバーに到着</span></button></li></ol>
+</div>
+<p>小包には宛先として <dfn>IPアドレス</dfn> が書かれています。ネットにつながる機器には、スマホも含めて必ず IP アドレスが割り当てられます。</p>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>IPアドレスは <code>203.0.113.10</code> のように、0〜255 の数字を4つ並べた形が一般的です（IPv4）。数が足りなくなったため、より長い IPv6 も使われています。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：DNSで住所を調べる</a></div>
+</section>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 9</span></p>
+  <h2 id="h-3">DNSで住所を調べる</h2>
+  
+<p><code>www.example.jp</code> のような名前は人間が覚えるためのものです。コンピュータは相手を IP アドレスで探すので、最初に <dfn>DNSサーバー</dfn> へ「この名前の住所は？」と問い合わせます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 170" role="img" aria-label="DNSに住所を問い合わせるアニメーション">
+<use href="#i-phone" x="20" y="52" width="40" height="64"/>
+<rect class="s fs" x="276" y="48" width="64" height="72" rx="6"/><path class="s" d="M308 48V120"/><path class="s thin" d="M286 66h14M286 78h14M286 90h14M316 66h14M316 78h14M316 90h14"/>
+<rect class="s sp" x="270" y="42" width="76" height="84" rx="9" style="stroke-width:3" data-s="3"/>
+<text class="tm tp tb" x="308" y="32" text-anchor="middle" data-s="3">名簿を検索中…</text>
+<text class="t" x="40" y="136" text-anchor="middle">スマホ</text><text class="t" x="308" y="144" text-anchor="middle">DNSサーバー</text>
+<g data-at="1:68,28|2:128,28" data-s="1-2"><rect class="s fc" width="140" height="28" rx="14"/><text class="t mono" x="12" y="19" style="font-size:12px">www.example.jp は？</text></g>
+<g data-at="3:128,96|4:68,96" data-s="3-4"><rect class="s fy" width="140" height="28" rx="14"/><text class="t mono tb" x="20" y="19" style="font-size:12.5px">203.0.113.10</text></g>
+<g data-s="5"><rect class="s sp fs" x="68" y="70" width="150" height="34" rx="6"/><text class="t" x="80" y="92" style="font-size:12.5px">203.0.113.10 を記憶</text><text class="tm" x="40" y="160" text-anchor="middle">キャッシュ</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">DNSの問い合わせ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>スマホが質問を書く「www.example.jp の住所は？」</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>DNS サーバーへ送る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>DNS サーバーが名簿から探す</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>答え「203.0.113.10」が返ってくる</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>スマホは答えをしばらく覚えておく（キャッシュ）</span></button></li></ol>
+</div>
+<div class="code"><div class="code-h"><span>DNS への問い合わせ（イメージ）</span></div><pre><code><span class="cm"># スマホ → DNSサーバー</span>
+www.example.jp の IPアドレスを教えて
+
+<span class="cm"># DNSサーバー → スマホ</span>
+www.example.jp は <span class="hl">203.0.113.10</span> です</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>一度調べた結果はしばらく覚えておきます（<dfn>キャッシュ</dfn>）。同じサイトを2回目に開くときは、この段階を省略できることがあります。</p></div></aside>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>スマホの連絡先アプリ。「お母さん」という名前から電話番号を引くのと同じです。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">ドメイン名から IP アドレスを調べる仕組みはどれ？</p><div class="opts"><button class="opt" type="button">HTTP</button><button class="opt" type="button">DNS</button><button class="opt" type="button">CSS</button></div><p class="fb">DNS はインターネットの電話帳です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：TCPで接続する</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 9</span></p>
+  <h2 id="h-4">TCPで接続する</h2>
+  
+<p>住所がわかったら、サーバーと確実に会話できる道をつくります。最初に3回あいさつを交わすので、<dfn>3ウェイハンドシェイク</dfn>と呼ばれます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 220" role="img" aria-label="TCPの3ウェイハンドシェイクのアニメーション">
+<text class="t tb" x="60" y="22" text-anchor="middle">スマホ</text><text class="t tb" x="300" y="22" text-anchor="middle">サーバー</text>
+<path class="s sl dash" d="M60 32V184M300 32V184"/>
+<g data-s="1-4"><path class="s" d="M64 64L294 80" marker-end="url(#ar)"/><text class="t" x="180" y="58" text-anchor="middle"><tspan class="mono tb">SYN</tspan>「つながりますか？」</text></g>
+<g data-s="2-4"><path class="s sp" d="M296 112L66 128" marker-end="url(#arp)"/><text class="t tp" x="180" y="106" text-anchor="middle"><tspan class="mono tb">SYN-ACK</tspan>「聞こえます。そちらは？」</text></g>
+<g data-s="3-4"><path class="s" d="M64 158L294 174" marker-end="url(#ar)"/><text class="t" x="180" y="152" text-anchor="middle"><tspan class="mono tb">ACK</tspan>「聞こえました」</text></g>
+<g data-s="4"><rect class="fs" x="40" y="190" width="280" height="26" rx="13"/><text class="t tb" x="180" y="208" text-anchor="middle">接続完了！ここからデータを送る</text></g>
+<g data-at="1:290,79|2:70,127|3:290,173|4:290,173" data-s="1-3"><circle class="fy s thin" r="8"/></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">3ウェイハンドシェイク</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>SYN：スマホ「つながりますか？」</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>SYN-ACK：サーバー「聞こえます。そちらは？」</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>ACK：スマホ「聞こえました」</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>3回のあいさつで接続完了。ここからデータを送る</span></button></li></ol>
+</div>
+<p><dfn>TCP</dfn> は、小包が<strong>全部届いたか確認し、欠けたら送り直し、順番を並べ直す</strong>係です。途中で小包が迷子になっても、ページが崩れずに届くのは TCP のおかげです。</p>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>このとき <dfn>ポート番号</dfn> で「サーバーのどの窓口か」も指定します。HTTPS は <code>443</code> 番、HTTP は <code>80</code> 番が決まりです。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">小包が途中で欠けても、ページが崩れずに届くのはどの技術のおかげ？</p><div class="opts"><button class="opt" type="button">HTML</button><button class="opt" type="button">TCP</button><button class="opt" type="button">DNS</button></div><p class="fb">TCP が届いたかを確認し、欠けたものを送り直しています。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：TLSで暗号化する</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 9</span></p>
+  <h2 id="h-5">TLSで暗号化する</h2>
+  
+<p>アドレスバーの鍵マークは、この段階を通った印です（Chrome では鍵の代わりに、つまみの形をした「サイト情報」のアイコンが表示されます）。<dfn>TLS</dfn> は2つの仕事をします。</p>
+<ul class="list">
+  <li><strong>本物か確かめる</strong>：サーバーが「証明書」を見せ、ニセモノのサイトでないことを確認します。</li>
+  <li><strong>中身を暗号化する</strong>：途中のルーターや同じ Wi-Fi の人に、中身を読まれたり書き換えられたりしないようにします。</li>
+</ul>
+<figure class="fig"><svg viewBox="0 0 360 205" role="img" aria-label="鍵つきの箱でデータを運び、のぞいても読めないことと、サーバーが証明書を見せる図">
+<g class="s"><ellipse cx="96" cy="30" rx="16" ry="9"/><circle cx="96" cy="30" r="4" class="fp"/></g>
+<text class="tm" x="120" y="27">のぞいても</text><text class="tm mono" x="120" y="43">x7#q@9!k…</text><text class="tm" x="210" y="43">としか見えない</text>
+<path class="s sl dash" d="M150 50L170 76"/>
+<use href="#i-phone" x="16" y="72" width="40" height="64"/>
+<use href="#i-server" x="292" y="72" width="56" height="64"/>
+<path class="s sl" d="M62 104H148M214 104H286" style="stroke-width:3"/>
+<path class="s" d="M166 84V74a14 14 0 0 1 28 0V84"/><rect class="s fy" x="148" y="84" width="64" height="44" rx="6"/><circle class="fc" cx="180" cy="102" r="5"/><path class="s" d="M180 106V116"/>
+<text class="tm" x="180" y="148" text-anchor="middle">鍵つきの箱で運ぶ（暗号化）</text>
+<rect class="s fc" x="276" y="150" width="78" height="46" rx="4"/><text class="t tb" x="288" y="170">証明書</text><text class="tm" x="288" y="187">本物です</text>
+</svg><figcaption>本物か確かめてから、鍵をかけて話す</figcaption></figure>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p><code>http://</code>（s がない）で始まるサイトは暗号化されていません。パスワードや個人情報を入力しないようにしましょう。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>鍵マークが保証するのは「通信が守られていること」だけです。サイトの中身が安全かどうかまでは保証しません。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>初めて話す相手と、どうやって鍵を安全に共有するのか。そのしくみは後半の<a href="#step-10">公開鍵暗号</a>で詳しく見ます。</p></div></aside>
+<div class="check" data-answer="0"><p class="check-h">理解度チェック</p><p class="check-q"><code>https://</code> で始まるページ（Safari などでは鍵マークが付く）で、守られていることはどれ？</p><div class="opts"><button class="opt" type="button">通信が暗号化され、サーバーが本物と確認できた</button><button class="opt" type="button">そのサイトにウイルスがないと保証された</button><button class="opt" type="button">通信速度が速い</button></div><p class="fb">鍵マークは TLS の印です。サイトの中身の安全性は別の話です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：HTTPリクエストを送る</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 9</span></p>
+  <h2 id="h-6">HTTPリクエストを送る</h2>
+  
+<p>いよいよ本題です。<dfn>HTTP</dfn> はブラウザとサーバーが話すためのルールで、実際に送られるのは次のような文字です。</p>
+<div class="code"><div class="code-h"><span>HTTP リクエストの例</span></div><pre><code><span class="hl">GET</span> /news/ HTTP/1.1               <span class="cm"># 何をしたいか</span>
+Host: www.example.jp              <span class="cm"># どのサイトか</span>
+User-Agent: Mozilla/5.0 (iPhone ...)   <span class="cm"># 誰が頼んでいるか</span>
+Accept: text/html                 <span class="cm"># 欲しい形式</span></code></pre></div>
+<figure class="fig"><svg viewBox="0 0 360 205" role="img" aria-label="HTTPリクエストを注文伝票にたとえた図">
+<rect class="s fc" x="40" y="10" width="280" height="186" rx="6"/>
+<path class="fp" d="M40 16a6 6 0 0 1 6-6h268a6 6 0 0 1 6 6v24H40z"/>
+<text class="t tb tw" x="180" y="31" text-anchor="middle">注文伝票（HTTPリクエスト）</text>
+<text class="tm" x="58" y="68">注文</text><text class="t mono tb" x="120" y="68">GET</text><text class="tm" x="160" y="68">（ください）</text>
+<path class="s sl dash thin" d="M56 80H304"/>
+<text class="tm" x="58" y="104">品物</text><text class="t mono" x="120" y="104">/news/</text>
+<path class="s sl dash thin" d="M56 116H304"/>
+<text class="tm" x="58" y="140">お店</text><text class="t mono" x="120" y="140">www.example.jp</text>
+<path class="s sl dash thin" d="M56 152H304"/>
+<text class="tm" x="58" y="176">お客</text><text class="t" x="120" y="176">iPhone の Safari</text>
+<circle class="s sp" cx="282" cy="66" r="20" style="stroke-width:2.5"/><text class="tm tp tb" x="282" y="70" text-anchor="middle">送信</text>
+</svg><figcaption>スマホからサーバーへ、この伝票が送られる</figcaption></figure>
+<p>1行目の <code>GET</code> を<dfn>メソッド</dfn>といいます。まずは次の2つを覚えれば十分です。</p>
+<div class="tbl stack"><table><thead><tr><th>メソッド</th><th>意味</th><th>使われる場面</th></tr></thead><tbody>
+<tr><td data-label="メソッド"><code>GET</code></td><td data-label="意味">ください</td><td data-label="使われる場面">ページを見る、画像を読み込む</td></tr>
+<tr><td data-label="メソッド"><code>POST</code></td><td data-label="意味">受け取ってください</td><td data-label="使われる場面">ログイン、フォーム送信、投稿</td></tr>
+</tbody></table></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：サーバーがページを用意する</a></div>
+</section>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 9</span></p>
+  <h2 id="h-7">サーバーがページを用意する</h2>
+  
+<p>サーバーといっても、中身は普通のコンピュータです。多くはデータセンターや、AWS などの<dfn>クラウド</dfn>の上で動いています。ページの用意のしかたは大きく2通りあります。</p>
+<figure class="fig"><svg viewBox="0 0 360 215" role="img" aria-label="静的ページは作り置きのファイルを渡し、動的ページはプログラムがデータベースを使ってその場で作る図">
+<path class="s sl" d="M180 14V200"/>
+<text class="t tb" x="90" y="24" text-anchor="middle">静的</text><text class="t tb" x="270" y="24" text-anchor="middle">動的</text>
+<path class="s" d="M24 88H156"/>
+<use href="#i-file" x="34" y="46" width="30" height="38"/><use href="#i-file" x="75" y="46" width="30" height="38"/><use href="#i-file" x="116" y="46" width="30" height="38"/>
+<rect class="fy" x="75" y="46" width="30" height="38" rx="2" opacity=".55"/>
+<path class="s" d="M90 96V126" marker-end="url(#ar)"/>
+<use href="#i-file" x="75" y="134" width="30" height="38"/>
+<text class="tm" x="90" y="196" text-anchor="middle">棚の作り置きを渡す</text>
+<g class="s"><path d="M200 48v32a20 7 0 0 0 40 0V48"/><ellipse cx="220" cy="48" rx="20" ry="7" class="fs"/></g>
+<text class="tm" x="220" y="104" text-anchor="middle">データベース</text>
+<path class="s" d="M246 64H282" marker-end="url(#ar)"/>
+<circle class="s fs" cx="308" cy="64" r="18"/><path class="s" d="M308 40v-4M308 92v-4M284 64h-4M336 64h-4"/><text class="tm tb tp mono" x="308" y="68" text-anchor="middle">Py</text>
+<text class="tm" x="308" y="104" text-anchor="middle">プログラム</text>
+<path class="s" d="M300 112L282 130" marker-end="url(#ar)"/>
+<use href="#i-file" x="256" y="134" width="30" height="38"/><rect class="fs" x="256" y="134" width="30" height="38" opacity=".6"/>
+<text class="tm" x="270" y="196" text-anchor="middle">注文ごとに作って渡す</text>
+</svg><figcaption>同じサーバーでも、ページの用意のしかたは2通り</figcaption></figure>
+<div class="tbl stack"><table><thead><tr><th></th><th>静的なページ</th><th>動的なページ</th></tr></thead><tbody>
+<tr><td data-label="">しくみ</td><td data-label="静的なページ">用意してあるファイルをそのまま返す</td><td data-label="動的なページ">プログラムがデータベースを調べて、その場で作る</td></tr>
+<tr><td data-label="">見え方</td><td data-label="静的なページ">誰が見ても同じ</td><td data-label="動的なページ">人や時間によって変わる</td></tr>
+<tr><td data-label="">例</td><td data-label="静的なページ">大学の案内ページ、GitHub Pages</td><td data-label="動的なページ">SNS のタイムライン、ログイン後のページ</td></tr>
+</tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>第3回で学ぶ Python は、動的なページを作るプログラムによく使われる言語です。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：HTTPレスポンスが返る</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 9</span></p>
+  <h2 id="h-8">HTTPレスポンスが返る</h2>
+  
+<p>サーバーは、結果を表す<dfn>ステータスコード</dfn>と、ページの中身（HTML）をセットで返します。</p>
+<div class="code"><div class="code-h"><span>HTTP レスポンスの例</span></div><pre><code>HTTP/1.1 <span class="hl">200 OK</span>
+Content-Type: text/html; charset=utf-8
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;h1&gt;お知らせ&lt;/h1&gt; ...</code></pre></div>
+<figure class="fig"><svg viewBox="0 0 360 195" role="img" aria-label="ステータスコード200 OKの札がついた、HTMLの入った箱がスマホに届く図">
+<use href="#i-phone" x="20" y="86" width="40" height="64"/>
+<path class="s sp" d="M104 120H70" marker-end="url(#arp)"/>
+<rect class="s fs" x="134" y="30" width="64" height="58" rx="3"/><text class="tm mono tp tb" x="166" y="54" text-anchor="middle">&lt;html&gt;</text>
+<rect class="s fc" x="112" y="66" width="140" height="96" rx="4"/><path class="s" d="M112 66L98 52M252 66L266 52"/>
+<path class="s thin" d="M232 66L246 50"/><text class="t tb" x="182" y="122" text-anchor="middle">HTTP</text><text class="t tb" x="182" y="142" text-anchor="middle">レスポンス</text>
+<text class="tm" x="285" y="18" text-anchor="middle">結果の札</text>
+<rect class="s fy" x="236" y="24" width="98" height="40" rx="6"/><circle class="fc s thin" cx="248" cy="44" r="4"/>
+<text class="t mono tb" x="292" y="50" text-anchor="middle">200 OK</text>
+<path class="s sp" d="M340 120H262" marker-end="url(#arp)"/><text class="tm" x="300" y="112" text-anchor="middle">サーバーから</text>
+<text class="tm" x="182" y="182" text-anchor="middle">中身はページのデータ（HTML）</text>
+</svg><figcaption>レスポンスは「結果の札」と「中身」のセット</figcaption></figure>
+<div class="tbl stack"><table><thead><tr><th>コード</th><th>意味</th><th>よく見る場面</th></tr></thead><tbody>
+<tr><td data-label="コード"><code>200</code></td><td data-label="意味">成功</td><td data-label="よく見る場面">ふつうに表示できたとき</td></tr>
+<tr><td data-label="コード"><code>301</code></td><td data-label="意味">引っ越しました</td><td data-label="よく見る場面">URL が変わったページ</td></tr>
+<tr><td data-label="コード"><code>404</code></td><td data-label="意味">見つかりません</td><td data-label="よく見る場面">URL の打ち間違い、消えたページ</td></tr>
+<tr><td data-label="コード"><code>500</code></td><td data-label="意味">サーバー側の失敗</td><td data-label="よく見る場面">プログラムのエラー</td></tr>
+</tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>最初の数字で見分けます。<strong>2 は成功、4 はお客さん（ブラウザ）側の問題、5 はお店（サーバー）側の問題</strong>です。</p></div></aside>
+<div class="check" data-answer="2"><p class="check-h">理解度チェック</p><p class="check-q">URL を打ち間違えたときによく出るステータスコードは？</p><div class="opts"><button class="opt" type="button">200</button><button class="opt" type="button">500</button><button class="opt" type="button">404</button></div><p class="fb">404 は「見つかりません」。4 で始まるのはブラウザ側の問題です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：ブラウザが表示する</a></div>
+</section>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 9</span></p>
+  <h2 id="h-9">ブラウザが表示する</h2>
+  
+<p>ブラウザは届いた HTML を上から読み、3種類の材料を組み合わせて画面を作ります。</p>
+<figure class="fig"><svg viewBox="0 0 360 200" role="img" aria-label="HTMLの骨組みにCSSで見た目、JavaScriptで動きが加わる3つの画面">
+<g class="s thin"><rect x="14" y="14" width="88" height="148" rx="10" class="fc"/><rect x="134" y="14" width="88" height="148" rx="10" class="fc"/><rect x="254" y="14" width="88" height="148" rx="10" class="fc"/></g>
+<g class="s thin"><path d="M24 32h50"/><rect x="24" y="44" width="68" height="40"/><path d="M24 44l68 40M92 44L24 84M24 98h68M24 108h68M24 118h46"/><rect x="24" y="132" width="40" height="16"/></g>
+<rect class="fp" x="134" y="14" width="88" height="30" rx="10"/><rect class="fp" x="134" y="30" width="88" height="14"/><rect class="fc" x="144" y="26" width="40" height="6" rx="3"/>
+<rect class="fs" x="144" y="52" width="68" height="38" rx="6"/><g class="s sp thin"><path d="M144 102h68M144 112h68M144 122h46"/></g><rect class="fl" x="144" y="136" width="44" height="16" rx="8"/>
+<rect class="fp" x="254" y="14" width="88" height="30" rx="10"/><rect class="fp" x="254" y="30" width="88" height="14"/><rect class="fc" x="264" y="26" width="40" height="6" rx="3"/>
+<rect class="fs" x="264" y="52" width="68" height="38" rx="6"/><g class="s sp thin"><path d="M264 102h68M264 112h68M264 122h46"/></g><rect class="fy" x="264" y="136" width="44" height="16" rx="8"/>
+<g class="s thin"><circle cx="300" cy="148" r="7"/><circle cx="300" cy="148" r="13" class="sl"/></g>
+<path class="s" d="M106 88H130" marker-end="url(#ar)"/><path class="s" d="M226 88H250" marker-end="url(#ar)"/>
+<text class="t tb" x="58" y="182" text-anchor="middle">HTML</text><text class="tm" x="58" y="197" text-anchor="middle">骨組み</text>
+<text class="t tb" x="178" y="182" text-anchor="middle">＋CSS</text><text class="tm" x="178" y="197" text-anchor="middle">見た目</text>
+<text class="t tb" x="298" y="182" text-anchor="middle">＋JavaScript</text><text class="tm" x="298" y="197" text-anchor="middle">動き（タップに反応）</text>
+</svg><figcaption>同じページが、材料を足すごとに完成していく</figcaption></figure>
+<div class="tbl stack"><table><thead><tr><th>材料</th><th>役割</th><th>たとえ</th></tr></thead><tbody>
+<tr><td data-label="材料">HTML</td><td data-label="役割">見出し・文章・画像の場所</td><td data-label="たとえ">家の骨組み</td></tr>
+<tr><td data-label="材料">CSS</td><td data-label="役割">色・文字の大きさ・配置</td><td data-label="たとえ">内装</td></tr>
+<tr><td data-label="材料">JavaScript</td><td data-label="役割">ボタンを押したときの反応など</td><td data-label="たとえ">電気や水道</td></tr>
+</tbody></table></div>
+<p>HTML の中に「この画像も必要」「この CSS も必要」と書いてあると、ブラウザは<strong>段階6〜8を何度もくり返します</strong>。ふつうのページでも、表示までに数十回のやりとりがあります。</p>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>本当に数十回も通信しているのか、次の<a href="#ex-1">演習1</a>で自分の目で確かめてみましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：公開鍵暗号で、鍵を安全に渡す</a></div>
+</section>
+<div class="part" id="security"><p>Part 2</p><h2>セキュリティのしくみ</h2><p class="part-d">Step 5 と、ログインの裏側をもう一歩くわしく見ていきます。</p></div><section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Security 1<span>/ 2</span></p>
+  <h2 id="h-10">公開鍵暗号で、鍵を安全に渡す</h2>
+  
+<p>Step 5 で「中身を暗号化する」と書きました。暗号化するには、送る側と受け取る側が同じ「鍵」を持っている必要があります。では、初めて話す相手に、その鍵をどうやって安全に渡すのでしょうか。途中で鍵ごと盗まれたら意味がありません。</p>
+<div class="tbl stack"><table><thead><tr><th></th><th>共通鍵暗号</th><th>公開鍵暗号</th></tr></thead><tbody>
+<tr><td data-label="">鍵</td><td data-label="共通鍵暗号">1つの鍵を両者で共有</td><td data-label="公開鍵暗号">公開鍵と秘密鍵のペア</td></tr>
+<tr><td data-label="">速さ</td><td data-label="共通鍵暗号">速い</td><td data-label="公開鍵暗号">遅い</td></tr>
+<tr><td data-label="">弱点</td><td data-label="共通鍵暗号">鍵を渡す途中で盗まれると終わり</td><td data-label="公開鍵暗号">計算が重く、大量のデータには向かない</td></tr>
+</tbody></table></div>
+<p>TLS は両方のいいところを組み合わせます。<strong>公開鍵暗号で共通鍵を安全に渡し、そのあとは速い共通鍵暗号で通信する</strong>という流れです。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 230" role="img" aria-label="公開鍵暗号で共通鍵を安全に渡すアニメーション">
+<use href="#i-phone" x="14" y="118" width="40" height="64"/>
+<use href="#i-server" x="300" y="120" width="50" height="58"/>
+<text class="t" x="34" y="202" text-anchor="middle">スマホ</text><text class="t" x="325" y="202" text-anchor="middle">サーバー</text>
+<path class="s sl" d="M60 150H294" style="stroke-width:3"/>
+<g style="--ink:var(--accent)"><use href="#i-key" x="304" y="84" width="40" height="20"/></g>
+<text class="tm tp tb" x="298" y="99" text-anchor="end">秘密鍵</text>
+<g data-at="3:70,128|4:70,128|5:150,128|6:232,128" data-s="3-6"><rect class="s fc" width="54" height="40" rx="4"/><g style="--ink:var(--tip)"><use href="#i-key" x="9" y="12" width="36" height="18"/></g></g>
+<g data-at="1:306,22|2:22,22|3:22,22|4:106,114|5:186,114" data-s="1-5"><use href="#i-lock" width="30" height="34"/><text class="tm tb" x="15" y="48" text-anchor="middle" data-s="1-3">公開鍵</text></g>
+<text class="tm tb" x="97" y="120" text-anchor="middle" data-s="3">共通鍵を箱へ</text>
+<text class="tm tp tb" x="259" y="120" text-anchor="middle" data-s="6">開いた！</text>
+<g data-s="5"><g class="s"><ellipse cx="180" cy="44" rx="18" ry="10"/><circle cx="180" cy="44" r="4.5" class="fp"/></g><text class="tm" x="180" y="76" text-anchor="middle">のぞいても開けられない</text></g>
+<g data-s="7"><g style="--ink:var(--tip)"><use href="#i-key" x="66" y="160" width="44" height="22"/><use href="#i-key" x="246" y="160" width="44" height="22"/></g><text class="t tb" x="178" y="98" text-anchor="middle">同じ共通鍵を持てた</text><text class="tm mono" x="178" y="140" text-anchor="middle">x7#q@9!k…（暗号化された通信）</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 7</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">鍵の受け渡し</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>サーバーは「公開鍵（南京錠）」と「秘密鍵（その南京錠を開けるカギ）」のペアを持っている</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>サーバーは南京錠（公開鍵）を、証明書と一緒にスマホへ送る。南京錠は誰に見られても困らない</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>スマホは、これから使う「共通鍵」を作って箱に入れる</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>届いた南京錠で箱をロックする。閉めることはできても、もう誰も開けられない</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>途中でのぞかれても、箱は開けられない</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>サーバーだけが、秘密鍵で箱を開けて共通鍵を取り出せる</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>両者が同じ共通鍵を持てた。以後のやりとりは、この共通鍵で高速に暗号化する</span></button></li></ol>
+</div>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p><dfn>公開鍵</dfn>は「誰でも閉められるけれど、持ち主しか開けられない南京錠」です。南京錠そのものは配っても困りません。開けるためのカギ（<dfn>秘密鍵</dfn>）はサーバーの外に出ません。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>届いた南京錠が本当に www.example.jp のものかは、<dfn>認証局（CA）</dfn>という第三者が<dfn>証明書</dfn>で保証します。これが Step 5 の「本物か確かめる」の正体です。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>もう少し正確に</p><div><p>実際の TLS 1.3 では、共通鍵を箱に入れて送るのではなく、「鍵交換」という方法で両者が同じ共通鍵を計算して作ります。それでも「公開鍵のしくみを使って、盗み見されずに共通鍵を共有する」という考え方は同じです。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">この仕組みで、ロックされた箱を開けられるのは誰？</p><div class="opts"><button class="opt" type="button">公開鍵（南京錠）を受け取った人なら誰でも</button><button class="opt" type="button">秘密鍵を持っているサーバーだけ</button><button class="opt" type="button">途中のルーター</button></div><p class="fb">秘密鍵はサーバーの外に出ないので、開けられるのはサーバーだけです。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-11">次へ：セッションとCookieで、ログインを保つ</a></div>
+</section>
+<section class="step" id="step-11" data-step="11" aria-labelledby="h-11">
+  <p class="step-no">Security 2<span>/ 2</span></p>
+  <h2 id="h-11">セッションとCookieで、ログインを保つ</h2>
+  
+<p>HTTP には「前のやりとりを覚えていない」という性質があります（<dfn>ステートレス</dfn>）。毎回が初対面なので、このままではログインしても、次のページで「どなたですか？」と聞かれてしまいます。</p>
+<p>そこで使うのが <dfn>セッション</dfn> と <dfn>Cookie</dfn> です。ログインに成功すると、サーバーは「セッション ID」という番号札を発行し、ブラウザはそれを Cookie として保存します。以後のリクエストに番号札を添えることで、サーバーは「さっきの人だ」とわかります。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 236" role="img" aria-label="セッションIDとCookieでログイン状態を保つアニメーション">
+<use href="#i-phone" x="14" y="70" width="40" height="64"/>
+<use href="#i-server" x="300" y="66" width="50" height="58"/>
+<text class="t" x="34" y="152" text-anchor="middle">ブラウザ</text><text class="t" x="325" y="142" text-anchor="middle">サーバー</text>
+<rect class="s fc" x="6" y="166" width="104" height="56" rx="6"/><text class="tm tb" x="16" y="184">Cookie</text>
+<g data-s="4-6"><rect class="fy" x="14" y="194" width="88" height="20" rx="3"/><text class="t mono" x="20" y="209" style="font-size:12px">sid=a8f3</text></g>
+<rect class="s fc" x="226" y="160" width="128" height="62" rx="6"/><text class="tm tb" x="236" y="178">セッション表</text>
+<rect class="fs s sp" x="232" y="188" width="116" height="24" rx="3" data-s="6"/>
+<text class="t mono" x="238" y="205" style="font-size:12px" data-s="2-6">a8f3 → hanako</text>
+<g data-at="1:62,18|2:142,18" data-s="1-2"><rect class="s fc" width="150" height="40" rx="5"/><text class="t mono" x="10" y="17" style="font-size:11.5px">POST /login</text><text class="tm mono" x="10" y="33" style="font-size:11px">ID: hanako  PW: ●●●●</text></g>
+<g data-at="3:142,90|4:62,90" data-s="3-4"><rect class="s fy" width="150" height="40" rx="5"/><text class="t mono" x="10" y="17" style="font-size:11.5px">200 OK</text><text class="tm mono" x="10" y="33" style="font-size:11px">Set-Cookie: sid=a8f3</text></g>
+<g data-at="5:62,18|6:142,18" data-s="5-6"><rect class="s fc" width="150" height="40" rx="5"/><text class="t mono" x="10" y="17" style="font-size:11.5px">GET /mypage</text><text class="tm mono" x="10" y="33" style="font-size:11px">Cookie: sid=a8f3</text></g>
+<text class="t tp tb" x="354" y="56" text-anchor="end" data-s="6">hanakoさんだ！</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 6</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">ログイン状態のしくみ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>ログイン：ID とパスワードを送る（POST /login）</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>サーバーが確認し、番号札「セッション ID」を発行して表に記録</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>「この番号札を持っていてね」と Set-Cookie で返す</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>ブラウザは番号札を Cookie として保存する</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>次のページを開くとき、Cookie を自動で一緒に送る</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>サーバーは表と照らし合わせて「hanako さんだ」とわかる</span></button></li></ol>
+</div>
+<div class="code"><div class="code-h"><span>実際にやりとりされるヘッダー</span></div><pre><code><span class="cm"># ログイン成功時のレスポンス</span>
+HTTP/1.1 200 OK
+<span class="hl">Set-Cookie: sid=a8f3...; Secure; HttpOnly</span>
+
+<span class="cm"># 次のリクエスト</span>
+GET /mypage HTTP/1.1
+<span class="hl">Cookie: sid=a8f3...</span></code></pre></div>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>コートを預けたときにもらうクロークの番号札です。札を見せれば、毎回名前を名乗らなくても自分のコートが出てきます。</p></div></aside>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>セッション ID は「ログイン済みの証」です。盗まれると、パスワードを知らなくても本人になりすまされます（<dfn>セッションハイジャック</dfn>）。HTTPS で通信を暗号化するのは、これを防ぐためでもあります。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>上のヘッダーの <code>Secure</code> は「HTTPS のときだけ送る」、<code>HttpOnly</code> は「JavaScript から読めなくする」という設定です。どちらも番号札を盗まれにくくする工夫です。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>身を守るために</p><div><ul class="list"><li>共用の PC では必ずログアウトする（サーバー側のセッションが消える）</li><li><code>https://</code> で始まらないページでログインしない</li><li>パスワードを使い回さず、二段階認証を使う</li></ul></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">ログイン後、ブラウザがリクエストのたびに自動で送っているものは？</p><div class="opts"><button class="opt" type="button">パスワード</button><button class="opt" type="button">セッション ID が入った Cookie</button><button class="opt" type="button">IP アドレスの一覧</button></div><p class="fb">Cookie に入ったセッション ID を毎回添えることで、ログイン状態が続きます。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="12" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：自分の PC で確かめる</h2>
+  <p>ここまでの話は、ふだん使っているブラウザやターミナルで実際に見ることができます。</p>
+
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">演習 1</span><h3>ブラウザの通信をのぞく</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>1ページの表示に、何回の通信があるかを数える</dd></div><div><dt>使うもの</dt><dd>PC の Chrome</dd></div><div><dt>関係する段階</dt><dd>Step 6〜9</dd></div></dl>
+    <ol class="steps">
+      <li>好きな Web サイトを開く</li>
+      <li><kbd>F12</kbd>（Mac は <kbd>⌘</kbd> + <kbd>⌥</kbd> + <kbd>I</kbd>）で開発者ツールを開く</li>
+      <li>「Network」タブを選び、ページを再読み込みする</li>
+    </ol>
+    <p class="ex-sub">記録すること</p>
+    <ul class="list"><li>画面下に表示される requests の数</li><li>Status 列に並んでいる数字</li><li>一番時間がかかっているファイル</li></ul>
+    <details><summary>ヒント</summary><p>Status 列が見当たらないときは、表の見出しを右クリックして表示する列を選べます。</p></details>
+  </div>
+
+  <div class="exercise" id="ex-2">
+    <div class="ex-h"><span class="ex-tag">演習 2</span><h3>DNS に住所を聞く</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>ドメイン名から IP アドレスを調べる</dd></div><div><dt>使うもの</dt><dd>ターミナル（Windows はコマンドプロンプト）</dd></div><div><dt>関係する段階</dt><dd>Step 3</dd></div></dl>
+    <div class="code"><div class="code-h"><span>ターミナルで実行</span><button class="copy" type="button" data-copy="nslookup example.com">コピー</button></div><pre><code>nslookup example.com</code></pre></div>
+    <div class="code"><div class="code-h"><span>表示の例</span></div><pre><code>Name:    example.com
+Address: <span class="cm">（ここに IP アドレスが表示される）</span></code></pre></div>
+    <aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>表示される数字は、使っているネットワークや時期によって変わります。大学のサイトや好きなサービスのドメインでも試してみましょう。</p></div></aside>
+  </div>
+
+  <div class="exercise" id="ex-3">
+    <div class="ex-h"><span class="ex-tag">演習 3</span><h3>HTTP の返事を直接見る</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>レスポンスのステータスコードを読む</dd></div><div><dt>使うもの</dt><dd>ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 8</dd></div></dl>
+    <div class="code"><div class="code-h"><span>ターミナルで実行</span><button class="copy" type="button" data-copy="curl -I https://example.com">コピー</button></div><pre><code>curl -I https://example.com</code></pre></div>
+    <div class="code"><div class="code-h"><span>表示の例</span></div><pre><code>HTTP/2 <span class="hl">200</span>
+content-type: text/html
+...</code></pre></div>
+    <p>次に、存在しないパスを付けて実行すると、1行目の数字はどう変わるでしょうか。</p>
+    <div class="code"><div class="code-h"><span>試してみる</span><button class="copy" type="button" data-copy="curl -I https://example.com/abc">コピー</button></div><pre><code>curl -I https://example.com/abc</code></pre></div>
+    <details><summary>答えを見る</summary><p>ふつうは、ページが見つからないので <code>404</code> が返ってきます。サイトによっては、別のページへ案内する <code>301</code> などが返ることもあります。返ってきた番号を Step 8 の表で調べてみましょう。</p></details>
+  </div>
+
+
+  <div class="exercise" id="ex-4">
+    <div class="ex-h"><span class="ex-tag">演習 4</span><h3>証明書と Cookie を見てみる</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>証明書の発行者と、Cookie の設定を確認する</dd></div><div><dt>使うもの</dt><dd>PC の Chrome</dd></div><div><dt>関係する段階</dt><dd>Security 1・2</dd></div></dl>
+    <ol class="steps">
+      <li>ふだんログインして使っているサイトを開く</li>
+      <li>アドレスバー左のアイコンをクリックし、「この接続は保護されています」から証明書を表示して、発行者（認証局）を確認する</li>
+      <li>開発者ツールの「Application」タブで、左側の「Cookies」からそのサイトを選ぶ</li>
+    </ol>
+    <p class="ex-sub">記録すること</p>
+    <ul class="list"><li>証明書の発行者の名前</li><li>Cookie の名前と、Secure・HttpOnly 列にチェックが入っているか</li></ul>
+    <aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>Cookie の値（Value）は、ログイン済みの証そのものです。スクリーンショットで共有したり、人に送ったりしないでください。</p></div></aside>
+  </div>
+  <div class="step-foot"><button class="done" type="button" data-step="12"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：用語の早見表</h2>
+  <div class="tbl stack"><table><thead><tr><th>用語</th><th>ひとことで</th><th>段階</th></tr></thead><tbody>
+  <tr><td data-label="用語">URL</td><td data-label="ひとことで">データの宛名</td><td data-label="段階"><a href="#step-1">1</a></td></tr>
+  <tr><td data-label="用語">IPアドレス</td><td data-label="ひとことで">ネット上の住所（数字）</td><td data-label="段階"><a href="#step-2">2</a></td></tr>
+  <tr><td data-label="用語">パケット</td><td data-label="ひとことで">データを小分けにした小包</td><td data-label="段階"><a href="#step-2">2</a></td></tr>
+  <tr><td data-label="用語">ルーター</td><td data-label="ひとことで">小包を次へ運ぶ中継係</td><td data-label="段階"><a href="#step-2">2</a></td></tr>
+  <tr><td data-label="用語">DNS</td><td data-label="ひとことで">名前から住所を引く電話帳</td><td data-label="段階"><a href="#step-3">3</a></td></tr>
+  <tr><td data-label="用語">TCP</td><td data-label="ひとことで">確実に届ける係</td><td data-label="段階"><a href="#step-4">4</a></td></tr>
+  <tr><td data-label="用語">ポート番号</td><td data-label="ひとことで">サーバーの窓口番号</td><td data-label="段階"><a href="#step-4">4</a></td></tr>
+  <tr><td data-label="用語">TLS / HTTPS</td><td data-label="ひとことで">本物の確認と暗号化</td><td data-label="段階"><a href="#step-5">5</a></td></tr>
+  <tr><td data-label="用語">HTTP</td><td data-label="ひとことで">ブラウザとサーバーの会話のルール</td><td data-label="段階"><a href="#step-6">6</a>・<a href="#step-8">8</a></td></tr>
+  <tr><td data-label="用語">公開鍵 / 秘密鍵</td><td data-label="ひとことで">誰でも閉められる南京錠 / それを開けるカギ</td><td data-label="段階"><a href="#step-10">S1</a></td></tr>
+  <tr><td data-label="用語">セッション / Cookie</td><td data-label="ひとことで">ログイン状態を保つ番号札 / その保管場所</td><td data-label="段階"><a href="#step-11">S2</a></td></tr>
+  <tr><td data-label="用語">ステータスコード</td><td data-label="ひとことで">結果を表す3桁の数字</td><td data-label="段階"><a href="#step-8">8</a></td></tr>
+  <tr><td data-label="用語">HTML / CSS / JS</td><td data-label="ひとことで">骨組み / 見た目 / 動き</td><td data-label="段階"><a href="#step-9">9</a></td></tr>
+  </tbody></table></div>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="00-setup.html" style="text-decoration:none;color:var(--text)"><small>前のレッスン</small>第0回 はじめる準備</a>
+    <a class="pg next-l" href="02-git.html" style="text-decoration:none;color:var(--text)"><small>次のレッスン</small>第2回 Git と GitHub</a>
+  </nav>
+</section>
+
+  </article>
+
+  <aside class="toc" aria-label="このページの内容">
+    <p>このページの内容</p>
+    <ul>
+      <li><a href="#overview" data-toc="overview">全体の流れ</a></li>
+      <li><a href="#step-1" data-toc="step-1">URLを入力する</a></li><li><a href="#step-2" data-toc="step-2">電波でインターネットへ出る</a></li><li><a href="#step-3" data-toc="step-3">DNSで住所を調べる</a></li><li><a href="#step-4" data-toc="step-4">TCPで接続する</a></li><li><a href="#step-5" data-toc="step-5">TLSで暗号化する</a></li><li><a href="#step-6" data-toc="step-6">HTTPリクエストを送る</a></li><li><a href="#step-7" data-toc="step-7">サーバーがページを用意する</a></li><li><a href="#step-8" data-toc="step-8">HTTPレスポンスが返る</a></li><li><a href="#step-9" data-toc="step-9">ブラウザが表示する</a></li><li class="toc-h">セキュリティ</li><li><a href="#step-10" data-toc="step-10">公開鍵暗号</a></li><li><a href="#step-11" data-toc="step-11">セッションとCookie</a></li>
+      <li><a href="#exercise" data-toc="exercise">演習</a></li>
+      <li><a href="#summary" data-toc="summary">まとめ</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function(){
+  /* シミュレーター */
+  var steps=[{x:0,y:0,lit:"phone"},{x:32,y:0},{x:50,y:-1,lit:"dns"},{x:100,y:0,lit:"web"},{x:100,y:0,lit:"web"},{x:100,y:0,lit:"web"},{x:100,y:0,lit:"web"},{x:0,y:0,lit:"phone"},{x:0,y:0,lit:"phone"}];
+  var track=document.querySelector(".track"),packet=document.getElementById("packet");
+  var items=[].slice.call(document.querySelectorAll("#log li"));
+  var nodes={phone:document.getElementById("nd-phone"),dns:document.getElementById("nd-dns"),web:document.getElementById("nd-web")};
+  var btn=document.getElementById("play");
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  items.forEach(function(li,i){var m=li.querySelector(".msg");m.innerHTML='<a href="#step-'+(i+1)+'">'+m.innerHTML+'</a>'});
+  function place(s){var w=track.clientWidth,pad=28;packet.style.left=(pad+(w-pad*2)*s.x/100)+"px";packet.style.top=(s.y<0?16:97)+"px";
+    Object.keys(nodes).forEach(function(k){nodes[k].classList.toggle("lit",s.lit===k)})}
+  btn.addEventListener("click",function(){
+    btn.disabled=true;btn.textContent="通信中…";items.forEach(function(li){li.classList.remove("on","cur")});
+    var i=0;(function tick(){
+      if(i>0)items[i-1].classList.remove("cur");
+      if(i>=steps.length){btn.disabled=false;btn.textContent="もう一度";Object.keys(nodes).forEach(function(k){nodes[k].classList.remove("lit")});return}
+      place(steps[i]);items[i].classList.add("on","cur");i++;setTimeout(tick,reduce?450:1100)})();
+  });
+  addEventListener("resize",function(){if(!btn.disabled)place({x:0,y:0})});
+
+
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-web-progress",TOTAL=12,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="12"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>

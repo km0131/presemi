@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitとGitHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ドキュメント型3カラム：左に学習の進捗つき目次、中央に68字幅の記事、右にページ内目次。装飾は罫線と余白だけで組み、色は意味（補足・注意・ポイント）に使う。 */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --text:#15171C; --sub:#555C69; --border:#E3E5EA;
+  --accent:#2453D4; --accent-soft:#EEF2FD;
+  --note:#2453D4; --note-bg:#F1F5FE; --tip:#0E7A5C; --tip-bg:#EEF8F3; --warn:#A65A00; --warn-bg:#FFF7EA; --ana:#555C69; --ana-bg:#F6F7F9;
+  --code-bg:#F6F7F9; --hl:#A65A00;
+  --font:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 図解用 */
+  --ink:#15171C; --card:#FFFFFF; --paper:#FFFFFF; --muted:#555C69; --line:#D3D7DE; --shion:#2453D4; --shion-soft:#E9EFFD; --signal:#F2A93B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#181B21; --text:#E8EAEE; --sub:#A0A7B4; --border:#2A2E36;
+  --accent:#7FA2FF; --accent-soft:#1B2440;
+  --note:#8EAEFF; --note-bg:#161E33; --tip:#5ACB9F; --tip-bg:#13241D; --warn:#F2B35C; --warn-bg:#2A2012; --ana:#A0A7B4; --ana-bg:#181B21;
+  --code-bg:#181B21; --hl:#F2B35C;
+  --ink:#E8EAEE; --card:#181B21; --paper:#111317; --muted:#A0A7B4; --line:#3A3F49; --shion:#8EAEFF; --shion-soft:#1E2A47; --signal:#F2B35C;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+code,kbd{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 .4em;background:var(--bg)}
+dfn{font-style:normal;font-weight:700}
+strong{font-weight:700}
+
+/* ヘッダー */
+.hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd-in{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;max-width:1440px;margin:0 auto}
+.brand{font-weight:700;font-size:.95rem;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;margin-left:.4em}
+.course{display:flex;gap:4px;font-size:.85rem;overflow-x:auto}
+.course a,.course span{padding:4px 10px;border-radius:6px;white-space:nowrap;text-decoration:none;color:var(--sub)}
+.course a[aria-current]{background:var(--surface);color:var(--text);font-weight:500}
+.course span{opacity:.6}
+.hd-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .3s}
+
+/* 3カラム */
+.layout{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:270px minmax(0,1fr) 230px;gap:0 48px;padding:0 24px}
+.sidebar,.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 0}
+.toc{padding-top:40px}
+@media (max-width:1240px){.layout{grid-template-columns:250px minmax(0,1fr)} .toc{display:none}}
+@media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)} .sidebar{display:none}}
+
+/* サイドバー：学習の進捗 */
+.prog{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+.prog-top{display:flex;justify-content:space-between;font-size:.82rem;color:var(--sub)}
+.prog-top b{color:var(--text);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s}
+.side-h{font-size:.78rem;color:var(--sub);margin:0 0 8px 10px;font-weight:500}
+.nav{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.nav a{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:.88rem;color:var(--sub);text-decoration:none;line-height:1.5}
+.nav a:hover{background:var(--surface);color:var(--text)}
+.nav a.cur{background:var(--accent-soft);color:var(--text);font-weight:500}
+.nav .n{font-family:var(--mono);font-size:.78rem;width:1.2em;text-align:center;color:var(--sub)}
+.mark{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex:none;display:grid;place-items:center}
+.nav a.is-done .mark{background:var(--tip);border-color:var(--tip)}
+.nav a.is-done .mark::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.reset{margin:14px 0 0 10px;font:inherit;font-size:.78rem;color:var(--sub);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+
+/* モバイル用目次 */
+.m-nav{display:none;margin:20px 0 0;border:1px solid var(--border);border-radius:10px}
+.m-nav summary{cursor:pointer;padding:12px 16px;font-size:.9rem;font-weight:500;display:flex;justify-content:space-between;list-style:none}
+.m-nav summary::-webkit-details-marker{display:none}
+.m-nav summary span{color:var(--sub);font-weight:400}
+.m-nav .nav{padding:0 8px 10px}
+@media (max-width:880px){.m-nav{display:block}}
+
+/* 右：ページ内目次 */
+.toc p{font-size:.78rem;color:var(--sub);margin-bottom:8px;font-weight:500}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.toc a{display:block;padding:4px 0 4px 14px;margin-left:-1px;border-left:2px solid transparent;font-size:.82rem;color:var(--sub);text-decoration:none;line-height:1.55}
+.toc a:hover{color:var(--text)}
+.toc a.cur{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+/* 記事 */
+article{max-width:720px;width:100%;padding:36px 0 120px;margin:0 auto 0 0}
+.crumb{font-size:.82rem;color:var(--sub);display:flex;gap:6px;flex-wrap:wrap}
+.crumb span+span::before{content:"/";margin-right:6px;color:var(--border)}
+h1{font-size:clamp(1.75rem,4vw,2.4rem);font-weight:700;margin-top:14px;letter-spacing:.01em}
+.desc{margin-top:14px;font-size:1.06rem;color:var(--sub);max-width:36em}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:22px 0 0;padding:0;font-size:.85rem}
+.facts div{display:flex;gap:8px} .facts dt{color:var(--sub)} .facts dd{margin:0;font-weight:500}
+.goals{margin-top:32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0}
+.goals h2{font-size:1rem}
+.goals ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.goals li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.95rem}
+.goals li::before{content:"";width:12px;height:7px;border-left:2px solid var(--tip);border-bottom:2px solid var(--tip);transform:rotate(-45deg);margin-top:.55em;margin-left:3px}
+
+.step,.ex-sec,.intro{padding-top:64px;display:grid;gap:20px}
+.step-no{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+.step-no span{color:var(--sub);margin-left:4px}
+.step h2,.ex-sec h2,.intro h2{font-size:clamp(1.4rem,3vw,1.7rem);margin-top:-12px}
+.step p,.ex-sec p,.intro p{max-width:40em}
+.list{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* 図 */
+.fig{margin:4px 0;border:1px solid var(--border);border-radius:10px;padding:20px 16px 12px}
+.fig svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.fig figcaption{font-size:.82rem;color:var(--sub);text-align:center;margin-top:10px}
+
+/* URL分解 */
+.anatomy{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;overflow-x:auto}
+.anatomy div{display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.anatomy code{background:none;border:0;border-bottom:3px solid var(--accent);border-radius:0;padding:0 2px 6px;font-size:clamp(.85rem,2.5vw,1.05rem)}
+.anatomy div:nth-child(1) code{border-color:var(--signal)}
+.anatomy div:nth-child(3) code{border-color:var(--tip)}
+.anatomy span{font-size:.75rem;color:var(--sub);line-height:1.45}
+
+/* コールアウト */
+.callout{border-left:3px solid var(--c);background:var(--cb);border-radius:0 8px 8px 0;padding:12px 18px 14px;font-size:.94rem}
+.callout .c-title{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--c);margin-bottom:4px}
+.callout .c-title svg{width:16px;height:16px}
+.callout div{display:grid;gap:8px}
+.callout.note{--c:var(--note);--cb:var(--note-bg)}
+.callout.tip{--c:var(--tip);--cb:var(--tip-bg)}
+.callout.warn{--c:var(--warn);--cb:var(--warn-bg)}
+.callout.analogy{--c:var(--ana);--cb:var(--ana-bg)}
+
+/* コード */
+.code{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+.code-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--sub);background:var(--bg)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.75}
+.code pre code{font-size:inherit}
+.cm{color:var(--sub)} .hl{color:var(--hl);font-weight:500}
+.copy{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 10px}
+.copy:hover{background:var(--surface)}
+.copy.ok{color:var(--tip);border-color:var(--tip)}
+
+/* 表 */
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+th{font-weight:500;font-size:.8rem;color:var(--sub);background:var(--surface)}
+td code{white-space:nowrap}
+
+/* 理解度チェック */
+.check{border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.check-h{font-size:.78rem;font-weight:700;color:var(--accent)}
+.check-q{font-weight:500;margin-top:2px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{font:inherit;font-size:.9rem;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:left}
+.opt:hover{border-color:var(--sub)}
+.opt.right{border-color:var(--tip);background:var(--tip-bg);color:var(--tip);font-weight:500}
+.opt.wrong{border-color:var(--warn);background:var(--warn-bg);color:var(--warn)}
+.fb{display:none;margin-top:10px;font-size:.9rem} .fb.show{display:block}
+.fb b{margin-right:6px}
+
+/* 段階のおわり */
+.step-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.done{font:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text)}
+.done .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--sub);display:grid;place-items:center}
+.done[aria-pressed="true"]{border-color:var(--tip);color:var(--tip)}
+.done[aria-pressed="true"] .box{background:var(--tip);border-color:var(--tip)}
+.done[aria-pressed="true"] .box::after{content:"";width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.next{font-size:.88rem;font-weight:500;text-decoration:none}
+.next:hover{text-decoration:underline}
+
+/* シミュレーター */
+.sim{border:1px solid var(--border);border-radius:10px;padding:18px 18px 14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.urlbar{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:.84rem;min-width:0}
+.urlbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;border:0;border-radius:8px;padding:8px 16px;background:var(--text);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.track{position:relative;height:150px;margin:24px 6px 6px}
+.rail{position:absolute;left:28px;right:28px;top:104px;height:2px;background:var(--line)}
+.rail-up{position:absolute;left:50%;top:44px;width:2px;height:62px;background:var(--line);transform:translateX(-1px)}
+.node{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--sub);transform:translateX(-50%);text-align:center;line-height:1.3}
+.node .ic{width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);transition:border-color .3s,box-shadow .3s}
+.node.lit .ic{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.n-phone{left:28px;top:82px} .n-dns{left:50%;top:0} .n-web{left:calc(100% - 28px);top:82px}
+.n-router{left:32%;top:78px;flex-direction:column-reverse}
+.n-router .dot{width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.packet{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--signal);left:28px;top:98px;transform:translateX(-50%);transition:left .7s cubic-bezier(.6,0,.3,1),top .5s ease;z-index:2}
+@media (prefers-reduced-motion:reduce){.packet,.node .ic{transition:none}}
+.log{list-style:none;margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--border);display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:24px 7.6em 1fr;gap:8px;align-items:baseline;font-size:.86rem;line-height:1.6;opacity:.4;transition:opacity .25s}
+.log li.on{opacity:1}
+.log li.cur .msg{color:var(--accent);font-weight:500}
+.log .no{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.log .dir{color:var(--sub);font-size:.78rem}
+.log a{text-decoration:none;color:inherit}
+@media (max-width:520px){.log li{grid-template-columns:22px 1fr} .log .dir,.log .msg{grid-column:2}}
+.sim-note{margin-top:10px;font-size:.78rem;color:var(--sub)}
+
+/* 役割 */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;margin:0}
+.roles div{padding:14px 16px}
+.roles div+div{border-left:1px solid var(--border)}
+@media (max-width:620px){.roles div+div{border-left:0;border-top:1px solid var(--border)}}
+.roles dt{font-weight:700} .roles dt span{font-family:var(--mono);font-size:.75rem;color:var(--sub);font-weight:400;margin-left:6px}
+.roles dd{margin:4px 0 0;font-size:.88rem;color:var(--sub)}
+
+/* 演習 */
+.exercise{border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;scroll-margin-top:76px}
+.ex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-tag{font-size:.75rem;font-weight:700;color:var(--tip);border:1px solid var(--tip);border-radius:999px;padding:0 10px}
+.ex-h h3{font-size:1.08rem}
+.ex-meta{margin:0;display:grid;gap:4px;font-size:.86rem}
+.ex-meta div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.ex-meta dt{color:var(--sub)} .ex-meta dd{margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:.95rem}
+.ex-sub{font-weight:700;font-size:.88rem}
+details{border-top:1px solid var(--border);padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+details p{margin-top:8px}
+.seeds{margin:0;padding-left:1.4em;display:grid;gap:14px}
+.seeds p{font-weight:500}
+.seeds span{font-size:.85rem;color:var(--sub)}
+
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.pg{border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.92rem;font-weight:500}
+.pg small{display:block;font-size:.76rem;color:var(--sub);font-weight:400}
+.pg.next-l{text-align:right}
+.pg.disabled{color:var(--sub)}
+
+
+/* 段階アニメーション */
+.player{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stage{padding:18px 16px 10px}
+.stage svg{width:100%;max-width:540px;height:auto;display:block;margin:0 auto}
+.player [data-s]{transition:opacity .35s}
+.player.ready [data-at]{transition:transform .7s cubic-bezier(.55,0,.3,1)}
+.player .off{opacity:0}
+.hlw{stroke-width:3.2}
+@media (prefers-reduced-motion:reduce){.player [data-s],.player.ready [data-at]{transition:none}}
+.pctrl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.pbtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:3px 12px}
+.pbtn:hover:not([disabled]){border-color:var(--sub)}
+.pbtn[disabled]{opacity:.4;cursor:default}
+.pbtn.play{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pcnt{font-family:var(--mono);font-size:.8rem;color:var(--sub);min-width:3.6em;text-align:center}
+.plabel{margin-left:auto;font-size:.76rem;color:var(--sub)}
+.frames{list-style:none;margin:0;padding:6px;border-top:1px solid var(--border);display:grid;gap:1px}
+.frames button{font:inherit;width:100%;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--sub);font-size:.88rem;line-height:1.6}
+.frames button:hover{background:var(--surface)}
+.frames .fn{font-family:var(--mono);font-size:.76rem}
+.frames li.past button{color:var(--text)}
+.frames li.cur button{background:var(--accent-soft);color:var(--text);font-weight:500}
+.frames li.cur .fn{color:var(--accent)}
+.part{margin-top:80px;padding:28px 0 4px;border-top:2px solid var(--text)}
+.part p:first-child{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.part h2{font-size:clamp(1.6rem,3.4vw,2rem);margin-top:4px}
+.part-d{color:var(--sub);margin-top:8px}
+.nav-h{font-size:.76rem;color:var(--sub);margin:14px 0 4px 10px;font-weight:500}
+.toc-h{font-size:.74rem;color:var(--sub);padding:10px 0 2px 14px}
+
+/* 図解クラス */
+.s{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{stroke:var(--shion)} .sl{stroke:var(--line)} .dash{stroke-dasharray:5 5} .thin{stroke-width:1.4}
+.fc{fill:var(--card)} .fs{fill:var(--shion-soft)} .fy{fill:var(--signal)} .fp{fill:var(--shion)} .fl{fill:var(--line)}
+.mk{fill:var(--ink)} .mkp{fill:var(--shion)}
+.t{fill:var(--ink);font-family:var(--font);font-size:14px} .tm{fill:var(--muted);font-family:var(--font);font-size:12px}
+.tb{font-weight:700} .mono{font-family:var(--mono)} .tp{fill:var(--shion)} .tw{fill:var(--paper)}
+
+.del{color:var(--warn)} .add{color:var(--tip)}
+.pc-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.pc-list li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
+.pc-list li::before{content:"";width:16px;height:16px;border-radius:50%;margin-top:.45em}
+.pc-list.pro li::before{background:var(--tip-bg);border:2px solid var(--tip)}
+.pc-list.con li::before{background:var(--warn-bg);border:2px solid var(--warn)}
+.pc-list b{display:block}
+.pc-list span{color:var(--sub);font-size:.92rem}
+.pc-h{font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.yes{color:var(--tip);font-weight:700} .no{color:var(--warn);font-weight:700} .mid{color:var(--sub);font-weight:700}
+
+a.pg{text-decoration:none;color:var(--text)} a.pg:hover{border-color:var(--sub)}
+/* スマホ表示の調整 */
+@media (max-width:640px){
+  html{scroll-padding-top:64px}
+  body{font-size:15.5px;line-height:1.85}
+  .hd-in{height:52px;padding:0 14px;gap:12px}
+  .brand span{display:none}
+  .course{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);padding-right:24px}
+  .course::-webkit-scrollbar{display:none}
+  .course a,.course span{padding:6px 10px}
+  .layout{padding:0 14px}
+  article{padding:22px 0 72px}
+  h1{font-size:1.55rem;line-height:1.45}
+  .desc{font-size:.98rem}
+  .facts{gap:4px 18px}
+  .goals{margin-top:24px;padding:18px 0}
+  .goals li{font-size:.92rem}
+  .step,.ex-sec,.intro{padding-top:48px;gap:16px}
+  .step h2,.ex-sec h2,.intro h2{font-size:1.32rem}
+  .part{margin-top:56px;padding-top:22px}
+  .part h2{font-size:1.45rem}
+  .fig{padding:12px 4px 8px;border-radius:8px}
+  .player{border-radius:8px}
+  .player .stage{padding:10px 2px 6px}
+  .pctrl{padding:8px 10px;gap:8px}
+  .plabel{display:none}
+  .pbtn{font-size:.86rem;padding:7px 14px}
+  .pbtn.play{margin-left:auto}
+  .frames{padding:4px}
+  .frames button{padding:8px 8px;font-size:.86rem;line-height:1.55}
+  .code{border-radius:8px}
+  .code-h{padding:6px 6px 6px 12px}
+  .code pre{font-size:.76rem;padding:12px;line-height:1.7}
+  .copy{padding:5px 12px}
+  .callout{padding:10px 14px 12px;font-size:.92rem}
+  .check{padding:14px}
+  .opts{flex-direction:column}
+  .opt{width:100%;padding:10px 14px}
+  .step-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .done{justify-content:center;padding:10px 14px}
+  .next{text-align:center;padding:4px 0}
+  .exercise{padding:16px;border-radius:8px}
+  .ex-meta div{grid-template-columns:5.5em 1fr}
+  .pager{grid-template-columns:1fr}
+  .pg.next-l{text-align:left}
+  .m-nav summary{padding:12px 14px}
+  .m-nav .nav a{padding:8px 10px}
+  .roles div{padding:12px 14px}
+  .demo-page{padding:4px 14px 14px}
+  .demo-page.styled{padding:16px 18px 20px}
+  .tablist button{padding:10px 12px}
+  .tbl{border-radius:8px}
+  th,td{padding:9px 12px}
+  /* 3列以上の表は、1行ずつのカードに並べ替える */
+  .tbl.stack table,.tbl.stack tbody,.tbl.stack tr,.tbl.stack td{display:block;width:100%}
+  .tbl.stack thead{display:none}
+  .tbl.stack tr{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .tbl.stack tbody tr:last-child{border-bottom:0}
+  .tbl.stack td{border:0;padding:2px 0;display:grid;grid-template-columns:6.2em 1fr;gap:10px}
+  .tbl.stack td::before{content:attr(data-label);color:var(--sub);font-size:.78rem;font-weight:500;line-height:1.9}
+  .tbl.stack td:first-child{display:block;font-weight:700;padding-bottom:6px}
+  .tbl.stack td:first-child::before{content:none}
+  .tbl.stack td code{white-space:normal}
+  .sheet div{padding:10px 14px}
+}
+/* チェック機能 */
+.nav li{display:flex;align-items:center}
+.nav li>a{flex:1;min-width:0}
+.mark-btn,.mark-sp{flex:none;width:30px;height:30px;display:grid;place-items:center;background:none;border:0;padding:0;border-radius:6px}
+.mark-btn{cursor:pointer}
+.mark-btn::before,.mark-btn::after{content:"";grid-area:1/1}
+.mark-btn::before{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);box-sizing:border-box;transition:background .15s,border-color .15s}
+.mark-btn:hover::before{border-color:var(--sub)}
+.mark-btn::after{width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.mark-btn[aria-pressed="true"]::before{background:var(--tip);border-color:var(--tip)}
+.mark-btn[aria-pressed="true"]::after{opacity:1}
+.m-nav .reset{margin:2px 0 12px 16px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+<marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<symbol id="i-phone" viewBox="0 0 40 64"><rect x="2" y="2" width="36" height="60" rx="7" class="s fc"/><rect x="7" y="10" width="26" height="40" rx="2" class="fs"/><path d="M16 56h8" class="s"/></symbol>
+<symbol id="i-server" viewBox="0 0 56 64"><rect x="2" y="2" width="52" height="27" rx="4" class="s fc"/><rect x="2" y="35" width="52" height="27" rx="4" class="s fc"/><circle cx="12" cy="15.5" r="3.5" class="fy"/><circle cx="12" cy="48.5" r="3.5" class="fy"/><path d="M24 15.5h20M24 48.5h20" class="s"/></symbol>
+<symbol id="i-file" viewBox="0 0 30 38"><path d="M2 2h18l8 8v26H2z" class="s fc"/><path d="M20 2v8h8M7 18h14M7 24h14M7 30h9" class="s thin"/></symbol>
+<symbol id="i-lock" viewBox="0 0 30 34"><path d="M8 15V10a7 7 0 0 1 14 0v5" class="s"/><rect x="3" y="15" width="24" height="17" rx="3" class="s fy"/><circle cx="15" cy="23" r="2.5" class="fc"/></symbol><symbol id="i-key" viewBox="0 0 40 20"><circle cx="9" cy="10" r="6.5" class="s"/><path d="M15.5 10H37M31 10v5M26 10v4" class="s"/></symbol><symbol id="i-pc" viewBox="0 0 56 44"><rect x="6" y="2" width="44" height="30" rx="3" class="s fc"/><rect x="10" y="6" width="36" height="22" rx="1" class="fs"/><path d="M2 37h52l-3 5H5z" class="s fc"/></symbol></defs></svg>
+<header class="hd">
+  <div class="hd-in">
+    <a class="brand" href="#top">プレゼミ<span>学習ノート</span></a>
+    <nav class="course" aria-label="レッスン">
+      <a href="index.html">研究の流れ</a>
+      <a href="00-setup.html">00 準備</a>
+      <a href="01-web.html">01 Webのしくみ</a>
+      <a href="#top" aria-current="page">02 Git と GitHub</a>
+      <a href="03-python.html">03 Python で Web</a>
+      <a href="04-research-system.html">04 データ収集システム</a>
+      <a href="05-report.html">05 レポートの書き方</a>
+    </nav>
+  </div>
+  <div class="hd-progress" id="hdbar"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="レッスンの目次">
+    <div class="prog"><div class="prog-top"><span>このレッスンの進み具合</span><b class="pcount">0 / 12</b></div><div class="bar"><i class="pbar"></i></div></div>
+    <p class="side-h">02 Git と GitHub</p>
+    <ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">バージョン管理</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>バージョン管理とは</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>利点と欠点</a></li><li class="nav-h">Git の基本</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>Git と GitHub</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>3つの場所</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>はじめてのコミット</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>履歴と過去に戻る</a></li><li class="nav-h">GitHub で共有</li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>push と pull</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>ブランチ</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>PR とコンフリクト</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>秘密を守る</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>GitHub Pages</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul>
+    <button class="reset" type="button">チェックをすべて外す</button>
+  </aside>
+
+  <article id="top">
+    <p class="crumb"><span>学習ノート</span><span>第2回</span><span>Git と GitHub</span></p>
+    <h1>Git と GitHub で、変更の歴史を残す</h1>
+    <p class="desc">「レポート_最終2.docx」を作ったことはありませんか。このレッスンでは、バージョン管理とは何かから始めて、Git で変更を記録し、GitHub で共有・公開するところまで進みます。</p>
+    <dl class="facts"><div><dt>所要時間</dt><dd>約90分</dd></div><div><dt>レベル</dt><dd>入門</dd></div><div><dt>前提知識</dt><dd>第1回、ターミナルを開けること</dd></div></dl>
+
+    <details class="m-nav"><summary>目次<span class="pcount">0 / 12</span></summary><ul class="nav"><li><a href="#overview" data-nav="0"><span class="mark" style="visibility:hidden"></span><span class="n">0</span>全体の流れ</a></li><li class="nav-h">バージョン管理</li><li><a href="#step-1" data-nav="1"><span class="mark" aria-hidden="true"></span><span class="n">1</span>バージョン管理とは</a></li><li><a href="#step-2" data-nav="2"><span class="mark" aria-hidden="true"></span><span class="n">2</span>利点と欠点</a></li><li class="nav-h">Git の基本</li><li><a href="#step-3" data-nav="3"><span class="mark" aria-hidden="true"></span><span class="n">3</span>Git と GitHub</a></li><li><a href="#step-4" data-nav="4"><span class="mark" aria-hidden="true"></span><span class="n">4</span>3つの場所</a></li><li><a href="#step-5" data-nav="5"><span class="mark" aria-hidden="true"></span><span class="n">5</span>はじめてのコミット</a></li><li><a href="#step-6" data-nav="6"><span class="mark" aria-hidden="true"></span><span class="n">6</span>履歴と過去に戻る</a></li><li class="nav-h">GitHub で共有</li><li><a href="#step-7" data-nav="7"><span class="mark" aria-hidden="true"></span><span class="n">7</span>push と pull</a></li><li><a href="#step-8" data-nav="8"><span class="mark" aria-hidden="true"></span><span class="n">8</span>ブランチ</a></li><li><a href="#step-9" data-nav="9"><span class="mark" aria-hidden="true"></span><span class="n">9</span>PR とコンフリクト</a></li><li><a href="#step-10" data-nav="10"><span class="mark" aria-hidden="true"></span><span class="n">10</span>秘密を守る</a></li><li><a href="#step-11" data-nav="11"><span class="mark" aria-hidden="true"></span><span class="n">11</span>GitHub Pages</a></li><li class="nav-h">演習</li><li><a href="#exercise" data-nav="12"><span class="mark" aria-hidden="true"></span><span class="n">演</span>演習 1〜4</a></li></ul></details>
+
+    <section class="goals" aria-labelledby="goals-h">
+      <h2 id="goals-h">このレッスンで学ぶこと</h2>
+      <ul>
+        <li>バージョン管理とは何か、その利点と欠点を説明できる</li>
+        <li>Git で変更を記録し（add・commit）、履歴をたどれる</li>
+        <li>GitHub に push して、仲間と共有できる</li>
+        <li>ブランチとプルリクエストの考え方がわかる</li>
+        <li>自分のページを GitHub Pages で公開できる</li>
+      </ul>
+    </section>
+
+    <section class="intro" id="overview" aria-labelledby="h-ov">
+      <p class="step-no">Overview</p>
+      <h2 id="h-ov">全体の流れ</h2>
+      <p>このレッスンで使う操作は、ほぼこの4つです。「次へ」か「自動再生」で、ファイルの動きを見てみましょう。</p>
+      <div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 150" role="img" aria-label="編集からGitHubまでの流れ">
+<rect class="s sl dash" x="4" y="22" width="262" height="108" rx="8"/><text class="tm" x="12" y="16">あなたの PC（Git）</text><text class="tm" x="316" y="16" text-anchor="middle">Web</text>
+<g class="s fc"><rect x="12" y="44" width="64" height="54" rx="6"/><rect x="100" y="44" width="64" height="54" rx="6"/><rect x="188" y="44" width="64" height="54" rx="6"/></g>
+<rect class="s fs" x="280" y="40" width="72" height="62" rx="10"/>
+<g class="s sp" style="stroke-width:3"><rect x="12" y="44" width="64" height="54" rx="6" data-s="1"/><rect x="100" y="44" width="64" height="54" rx="6" data-s="2"/><rect x="188" y="44" width="64" height="54" rx="6" data-s="3"/><rect x="280" y="40" width="72" height="62" rx="10" data-s="4-5"/></g>
+<g class="s"><path d="M78 71H96" marker-end="url(#ar)"/><path d="M166 71H184" marker-end="url(#ar)"/><path d="M254 71H276" marker-end="url(#ar)"/></g>
+<text class="tm mono" x="88" y="38" text-anchor="middle">add</text><text class="tm mono" x="176" y="38" text-anchor="middle">commit</text><text class="tm mono" x="266" y="38" text-anchor="middle">push</text>
+<text class="t" x="44" y="118" text-anchor="middle">編集</text><text class="t" x="132" y="118" text-anchor="middle">ステージ</text><text class="t" x="220" y="118" text-anchor="middle">リポジトリ</text><text class="t tb" x="316" y="122" text-anchor="middle">GitHub</text>
+<text class="tm tp tb" x="316" y="142" text-anchor="middle" data-s="5">共有・公開</text>
+<g data-at="1:32,56|2:120,56|3:208,56|4:304,56"><use href="#i-file" width="24" height="30"/></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">Git と GitHub の全体像</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>ファイルを編集する</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>git add で「次に記録するもの」を選ぶ</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>git commit で記録（コミット）として保存する</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>git push で GitHub にアップロードする</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>GitHub 上で、仲間と共有したり Web に公開したりできる</span></button></li></ol>
+</div>
+      <p>前半の Part 1 では、そもそもなぜこんな仕組みが必要なのかを考えます。</p>
+    </section>
+
+    <div class="part" id="part-1"><p>Part 1</p><h2>バージョン管理ってなに？</h2><p class="part-d">道具の使い方の前に、「何のための道具なのか」から始めます。</p></div>
+<section class="step" id="step-1" data-step="1" aria-labelledby="h-1">
+  <p class="step-no">Step 1<span>/ 11</span></p>
+  <h2 id="h-1">そもそもバージョン管理とは？</h2>
+  
+<p>「バージョン管理ツール」と聞くと難しそうですが、まず<strong>バージョン</strong>とは「ある時点のファイルの状態」のことです。レポートを書いて、直して、また直す。そのたびに新しいバージョンが生まれています。</p>
+<p><dfn>バージョン管理</dfn>とは、ファイルの変更を<strong>「いつ・誰が・何を・なぜ」変えたのか記録して、いつでも前の状態に戻せるようにすること</strong>です。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 190" role="img" aria-label="ファイルのコピーが増える手作業と、Gitの履歴の比較">
+<g data-s="1-5"><use href="#i-file" x="14" y="14" width="20" height="26"/><text class="t" x="44" y="32" style="font-size:13px">レポート.docx</text></g><g data-s="2-5"><use href="#i-file" x="14" y="48" width="20" height="26"/><text class="t" x="44" y="66" style="font-size:13px">レポート_修正.docx</text></g><g data-s="3-5"><use href="#i-file" x="14" y="82" width="20" height="26"/><text class="t" x="44" y="100" style="font-size:13px">レポート_最終.docx</text></g><g data-s="4-5"><use href="#i-file" x="14" y="116" width="20" height="26"/><text class="t" x="44" y="134" style="font-size:13px">レポート_最終2.docx</text></g><g data-s="5-5"><use href="#i-file" x="14" y="150" width="20" height="26"/><text class="t" x="44" y="168" style="font-size:13px">レポート_本当に最終.docx</text></g>
+<g data-s="5"><rect class="s fs" x="226" y="40" width="128" height="100" rx="8"/><text class="t tb" x="240" y="66" style="font-size:13px">どれが最新？</text><text class="t tb" x="240" y="92" style="font-size:13px">何を直した？</text><text class="t tb" x="240" y="118" style="font-size:13px">前に戻すには？</text></g>
+<g data-s="6-7"><use href="#i-file" x="14" y="12" width="22" height="28"/><text class="t tb" x="46" y="32">レポート.docx（ファイルは1つだけ）</text>
+<path class="s sp" d="M40 104H320" style="stroke-width:3"/><circle class="s fc" cx="40" cy="104" r="9"/><text class="tm mono" x="40" y="84" text-anchor="middle">a1f</text><text class="t" x="40" y="132" text-anchor="middle" style="font-size:12px">はじめ</text><circle class="s fc" cx="110" cy="104" r="9"/><text class="tm mono" x="110" y="84" text-anchor="middle">b2c</text><text class="t" x="110" y="132" text-anchor="middle" style="font-size:12px">誤字修正</text><circle class="s fc" cx="180" cy="104" r="9"/><text class="tm mono" x="180" y="84" text-anchor="middle">c3d</text><text class="t" x="180" y="132" text-anchor="middle" style="font-size:12px">3章追加</text><circle class="s fc" cx="250" cy="104" r="9"/><text class="tm mono" x="250" y="84" text-anchor="middle">d4e</text><text class="t" x="250" y="132" text-anchor="middle" style="font-size:12px">図を差替</text><circle class="s fc" cx="320" cy="104" r="9"/><text class="tm mono" x="320" y="84" text-anchor="middle">e5f</text><text class="t" x="320" y="132" text-anchor="middle" style="font-size:12px">提出版</text></g>
+<g data-s="7"><circle class="s sp" cx="180" cy="104" r="16" style="stroke-width:3"/><path class="s sp" d="M180 172V150" marker-end="url(#arp)"/><text class="t tp tb" x="192" y="172" style="font-size:12px">この時点にいつでも戻れる</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 7</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">手作業とバージョン管理</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>最初のレポートを保存する</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>直すたびに、名前を変えたコピーが増えていく</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>「最終」のはずが、また直す</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>さらにコピーが増える</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>どれが最新？何を直した？前に戻すには？ と分からなくなる</span></button></li><li><button type="button" data-go="6"><span class="fn">6</span><span>バージョン管理では、ファイルは1つのまま。変更の記録（履歴）が並ぶ</span></button></li><li><button type="button" data-go="7"><span class="fn">7</span><span>どの記録にもIDと説明があり、いつでもその時点に戻れる</span></button></li></ol>
+</div>
+<p>上のアニメーションの前半は、多くの人がやっている「手作業のバージョン管理」です。コピーが増えるほど、どれが最新で、何を変えたのかが分からなくなります。この記録を自動で、正確にやってくれるのが <dfn>Git</dfn>（ギット）という<strong>バージョン管理ツール</strong>です。</p>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>ゲームのセーブポイントです。ボス戦の前にセーブしておけば、失敗してもそこからやり直せます。Git では、このセーブを「<dfn>コミット</dfn>」と呼びます。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>Google ドキュメントの「版の履歴」や、iPhone の写真の「編集を元に戻す」も、身近なバージョン管理の一種です。Git はこれを、プログラムのような文字のファイルに対して、もっと細かく、複数人でできるようにしたものです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="1"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-2">次へ：利点と欠点</a></div>
+</section>
+<section class="step" id="step-2" data-step="2" aria-labelledby="h-2">
+  <p class="step-no">Step 2<span>/ 11</span></p>
+  <h2 id="h-2">利点と欠点</h2>
+  
+<p>便利な道具ですが、良いことばかりではありません。両方を知ったうえで使いどころを判断しましょう。</p>
+<h3 class="pc-h">利点</h3>
+<ul class="pc-list pro">
+  <li><div><b>いつでも過去に戻れる</b><span>壊しても、動いていた時点に戻せる。安心して大胆に変更できる</span></div></li>
+  <li><div><b>何が変わったかが1行単位でわかる</b><span>「どこを直したか」を目で探す必要がない</span></div></li>
+  <li><div><b>変えた理由が残る</b><span>コミットごとにメッセージを書くので、半年後の自分や他人にも経緯がわかる</span></div></li>
+  <li><div><b>複数人で同時に作業できる</b><span>それぞれの変更を、あとから1つにまとめられる</span></div></li>
+  <li><div><b>試しの作業を安全にできる</b><span>本体とは別の「枝」で実験して、うまくいったら取り込める</span></div></li>
+  <li><div><b>バックアップになる</b><span>GitHub に置けば、PC が壊れても履歴ごと残る</span></div></li>
+</ul>
+<h3 class="pc-h">欠点</h3>
+<ul class="pc-list con">
+  <li><div><b>最初に覚えることが多い</b><span>add、commit、push などのコマンドや用語に慣れるまで時間がかかる</span></div></li>
+  <li><div><b>記録する習慣が必要</b><span>自動保存ではないので、こまめにコミットしないと履歴が粗くなる</span></div></li>
+  <li><div><b>Word・Excel・画像・動画などは苦手</b><span>中身が文字ではないので、「何が変わったか」を表示できない。大きなファイルは容量も圧迫する</span></div></li>
+  <li><div><b>ぶつかったときに手で直す必要がある</b><span>2人が同じ行を変えると「コンフリクト」が起き、どちらを残すか人が決める</span></div></li>
+  <li><div><b>うっかり公開すると取り返しにくい</b><span>パスワードなどを記録して公開すると、消しても履歴に残る</span></div></li>
+</ul>
+<p>ほかの方法と比べると、次のようになります。</p>
+<div class="tbl stack"><table><thead><tr><th></th><th>コピーを保存</th><th>クラウドの版履歴</th><th>Git</th></tr></thead><tbody><tr><td data-label="">過去に戻れる</td><td data-label="コピーを保存"><span class="mid">手作業</span></td><td data-label="クラウドの版履歴"><span class="yes">できる</span></td><td data-label="Git"><span class="yes">できる</span></td></tr><tr><td data-label="">何が変わったかわかる</td><td data-label="コピーを保存"><span class="no">できない</span></td><td data-label="クラウドの版履歴"><span class="mid">ざっくり</span></td><td data-label="Git"><span class="yes">1行単位</span></td></tr><tr><td data-label="">変えた理由が残る</td><td data-label="コピーを保存"><span class="no">できない</span></td><td data-label="クラウドの版履歴"><span class="no">できない</span></td><td data-label="Git"><span class="yes">できる</span></td></tr><tr><td data-label="">複数人で同時に作業</td><td data-label="コピーを保存"><span class="no">難しい</span></td><td data-label="クラウドの版履歴"><span class="mid">同じ文書なら</span></td><td data-label="Git"><span class="yes">得意</span></td></tr><tr><td data-label="">覚えること</td><td data-label="コピーを保存">少ない</td><td data-label="クラウドの版履歴">少ない</td><td data-label="Git">多い</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>使いどころ</p><div><p><strong>向いているもの</strong>：プログラム、Webページ（HTML・CSS）、Markdown のメモ、CSV のデータ、LaTeX の論文など、中身が文字のファイル。<br><strong>向いていないもの</strong>：Word、PowerPoint、動画など。こちらはクラウドの版履歴のほうが楽です。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">Git が特に苦手なファイルはどれ？</p><div class="opts"><button class="opt" type="button">Python のプログラム</button><button class="opt" type="button">動画や Word のファイル</button><button class="opt" type="button">Markdown のメモ</button></div><p class="fb">中身が文字ではないファイルは、変更点を表示できず、容量も大きくなりがちです。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="2"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-3">次へ：Git と GitHub の違い</a></div>
+</section><div class="part" id="part-2"><p>Part 2</p><h2>Git の基本</h2><p class="part-d">自分の PC の中で、変更を記録する方法を学びます。</p></div>
+<section class="step" id="step-3" data-step="3" aria-labelledby="h-3">
+  <p class="step-no">Step 3<span>/ 11</span></p>
+  <h2 id="h-3">Git と GitHub の違い</h2>
+  
+<p>名前が似ていますが、役割はまったく違います。</p>
+<figure class="fig"><svg viewBox="0 0 360 170" role="img" aria-label="手元のGitとWeb上のGitHubの関係">
+<use href="#i-pc" x="16" y="56" width="92" height="72"/><text class="t tb" x="62" y="150" text-anchor="middle">あなたの PC</text><text class="tm" x="62" y="166" text-anchor="middle">Git（道具）で記録</text>
+<rect class="s fs" x="236" y="46" width="112" height="84" rx="10"/><text class="t tb" x="292" y="86" text-anchor="middle">GitHub</text><text class="tm" x="292" y="106" text-anchor="middle">履歴の置き場所</text>
+<text class="tm" x="292" y="150" text-anchor="middle">Web 上のサービス</text>
+<path class="s" d="M118 80H230" marker-end="url(#ar)"/><text class="t mono tb" x="174" y="72" text-anchor="middle">push</text>
+<path class="s sp" d="M230 106H118" marker-end="url(#arp)"/><text class="t mono tb tp" x="174" y="126" text-anchor="middle">pull</text>
+</svg><figcaption>Git は手元の道具、GitHub はその履歴を置いて共有する場所</figcaption></figure>
+<div class="tbl stack"><table><thead><tr><th></th><th>Git</th><th>GitHub</th></tr></thead><tbody><tr><td data-label="">正体</td><td data-label="Git">ソフトウェア（道具）</td><td data-label="GitHub">Web サービス</td></tr><tr><td data-label="">動く場所</td><td data-label="Git">自分の PC の中</td><td data-label="GitHub">インターネット上</td></tr><tr><td data-label="">できること</td><td data-label="Git">変更の記録、履歴の表示、過去に戻る</td><td data-label="GitHub">履歴の保管・共有、レビュー、Web 公開</td></tr><tr><td data-label="">ネットがなくても</td><td data-label="Git">使える</td><td data-label="GitHub">使えない</td></tr></tbody></table></div>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>Git はカメラ、GitHub は写真共有サービスです。写真を撮る（記録する）のはカメラだけでもできますが、みんなで見るにはアップロード先が必要です。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>GitHub と同じ役割のサービスに、GitLab や Bitbucket もあります。中で使われている Git は同じです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="3"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-4">次へ：3つの場所：編集・ステージ・リポジトリ</a></div>
+</section>
+<section class="step" id="step-4" data-step="4" aria-labelledby="h-4">
+  <p class="step-no">Step 4<span>/ 11</span></p>
+  <h2 id="h-4">3つの場所：編集・ステージ・リポジトリ</h2>
+  
+<p>Git では、ファイルが3つの場所を順番に移動します。最初はここでつまずく人が多いので、アニメーションで動きを確認しましょう。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 200" role="img" aria-label="作業ディレクトリ、ステージ、リポジトリの3つの場所">
+<text class="t tb" x="50" y="22" text-anchor="middle" style="font-size:12.5px">作業ディレクトリ</text><text class="t tb" x="180" y="22" text-anchor="middle" style="font-size:12.5px">ステージ</text><text class="t tb" x="310" y="22" text-anchor="middle" style="font-size:12.5px">リポジトリ</text>
+<g class="s"><rect class="fc" x="6" y="34" width="88" height="124" rx="8"/><rect class="fs" x="136" y="34" width="88" height="124" rx="8"/><rect class="fc" x="266" y="34" width="88" height="124" rx="8"/></g>
+<g class="s"><path d="M96 96H132" marker-end="url(#ar)"/><path d="M226 96H262" marker-end="url(#ar)"/></g>
+<text class="tm mono tb" x="115" y="88" text-anchor="middle">add</text><text class="tm mono tb" x="245" y="88" text-anchor="middle">commit</text>
+<text class="tm" x="50" y="178" text-anchor="middle">いま編集中</text><text class="tm" x="180" y="178" text-anchor="middle">次に記録するもの</text><text class="tm" x="310" y="178" text-anchor="middle">記録された履歴</text>
+<g data-at="1:36,64|2:166,64" data-s="1-2"><use href="#i-file" width="28" height="36"/><text class="tm tb" x="14" y="52" text-anchor="middle" style="fill:var(--warn)">変更</text></g>
+<g data-s="4"><use href="#i-file" x="36" y="64" width="28" height="36"/><text class="tm tb" x="50" y="116" text-anchor="middle" style="fill:var(--warn)">変更</text></g>
+<g data-s="3-4"><rect class="s fy" x="276" y="96" width="68" height="40" rx="4"/><text class="t mono tb" x="310" y="114" text-anchor="middle" style="font-size:12px">a1b2c3d</text><text class="tm" x="310" y="129" text-anchor="middle" style="font-size:10.5px">トップを作成</text></g>
+<g data-s="4"><rect class="s fy" x="276" y="48" width="68" height="40" rx="4"/><text class="t mono tb" x="310" y="66" text-anchor="middle" style="font-size:12px">e4f5a6b</text><text class="tm" x="310" y="81" text-anchor="middle" style="font-size:10.5px">誤字を修正</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">3つの場所</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>index.html を編集する。ここはまだ「作業ディレクトリ」の中</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>git add で、記録したい変更を「ステージ」に置く</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>git commit で、ステージの内容を1枚の記録（コミット）として保存する</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>また編集して add・commit すると、記録が積み重なって履歴になる</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th>場所</th><th>ひとことで</th><th>入れるコマンド</th></tr></thead><tbody><tr><td data-label="場所">作業ディレクトリ</td><td data-label="ひとことで">いま編集しているフォルダ</td><td data-label="入れるコマンド">（ふつうに編集する）</td></tr><tr><td data-label="場所">ステージ</td><td data-label="ひとことで">次に記録するものを並べる台</td><td data-label="入れるコマンド"><code>git add</code></td></tr><tr><td data-label="場所">リポジトリ</td><td data-label="ひとことで">記録（コミット）がたまっていく保管庫</td><td data-label="入れるコマンド"><code>git commit</code></td></tr></tbody></table></div>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>記念写真です。<code>git add</code> は「写したい人を撮影台に並べる」こと、<code>git commit</code> は「シャッターを押して1枚残す」ことです。並べる人を選べるので、関係ない変更を一緒に記録せずにすみます。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="4"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-5">次へ：はじめてのコミット</a></div>
+</section>
+<section class="step" id="step-5" data-step="5" aria-labelledby="h-5">
+  <p class="step-no">Step 5<span>/ 11</span></p>
+  <h2 id="h-5">はじめてのコミット</h2>
+  
+<p>実際に手を動かして、最初の記録を作ってみます。最初に一度だけ、記録に残る名前とメールアドレスを設定します。</p>
+<div class="code"><div class="code-h"><span>最初に一度だけ</span></div><pre><code>git config --global user.name "あなたの名前"
+git config --global user.email "you@example.com"</code></pre></div>
+<p>次に、フォルダを Git で管理する設定をして、ファイルを記録します。<code>$</code> は入力する行の目印なので、打たなくて大丈夫です。</p>
+<div class="code"><div class="code-h"><span>ターミナル</span></div><pre><code><span class="cm">$</span> git init
+Initialized empty Git repository in .../my-site/.git/
+
+<span class="cm">$</span> git status
+<span class="cm"># まだ記録されていないファイルが赤く表示される</span>
+
+<span class="cm">$</span> git add index.html
+<span class="cm">$</span> git commit -m "トップページを作成"
+[main (root-commit) <span class="hl">a1b2c3d</span>] トップページを作成
+ 1 file changed, 10 insertions(+)
+
+<span class="cm">$</span> git log --oneline
+<span class="hl">a1b2c3d</span> (HEAD -> main) トップページを作成</code></pre></div>
+<div class="tbl"><table><thead><tr><th>コマンド</th><th>意味</th></tr></thead><tbody><tr><td><code>git init</code></td><td>このフォルダを Git で管理し始める（最初の1回だけ）</td></tr><tr><td><code>git status</code></td><td>いまの状態を確認する。迷ったらまずこれ</td></tr><tr><td><code>git add ファイル名</code></td><td>ステージに置く。<code>git add .</code> ですべて</td></tr><tr><td><code>git commit -m "説明"</code></td><td>説明をつけて記録する</td></tr><tr><td><code>git log</code></td><td>記録の一覧を見る</td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>コミットメッセージは「何を・なぜ」が伝わるように書きます。「修正」「aaa」ではなく、「トップページの誤字を修正」「お問い合わせフォームを追加」のように。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>第0回の設定をしていない場合は、<code>main</code> ではなく <code>master</code> と表示されます。どちらも「基本の枝」の名前で、働きは同じです。GitHub に送る前に <code>git branch -M main</code> で名前をそろえます（Step 7）。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">git add のあとに、記録を残すために使うコマンドは？</p><div class="opts"><button class="opt" type="button">git push</button><button class="opt" type="button">git commit</button><button class="opt" type="button">git init</button></div><p class="fb">add で並べて、commit で記録します。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="5"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-6">次へ：履歴を見る・過去に戻る</a></div>
+</section>
+<section class="step" id="step-6" data-step="6" aria-labelledby="h-6">
+  <p class="step-no">Step 6<span>/ 11</span></p>
+  <h2 id="h-6">履歴を見る・過去に戻る</h2>
+  
+<p>記録がたまってくると、Git の本当の力が発揮されます。「いつ壊れたか」「何を変えたか」を、履歴から探せるようになります。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 190" role="img" aria-label="コミットの履歴をたどって過去に戻る">
+<path class="s sl" d="M30 62H240" style="stroke-width:3"/><path class="s sl" d="M240 62H310" style="stroke-width:3" data-s="4"/>
+<g data-s="1-4"><circle class="s fc" cx="30" cy="62" r="9"/><text class="tm mono" x="30" y="40" text-anchor="middle">a1f</text><text class="t" x="30" y="90" text-anchor="middle" style="font-size:11.5px">最初の版</text></g><g data-s="1-4"><circle class="s fc" cx="100" cy="62" r="9"/><text class="tm mono" x="100" y="40" text-anchor="middle">b2c</text><text class="t" x="100" y="90" text-anchor="middle" style="font-size:11.5px">見出し追加</text></g><g data-s="1-4"><circle class="s fc" cx="170" cy="62" r="9"/><text class="tm mono" x="170" y="40" text-anchor="middle">c3d</text><text class="t" x="170" y="90" text-anchor="middle" style="font-size:11.5px">色を変更</text></g><g data-s="1-4"><circle class="s fc" cx="240" cy="62" r="9"/><text class="tm mono" x="240" y="40" text-anchor="middle">d4e</text><text class="t" x="240" y="90" text-anchor="middle" style="font-size:11.5px">ボタン追加</text></g><g data-s="4"><circle class="s fc" cx="310" cy="62" r="9"/><text class="tm mono" x="310" y="40" text-anchor="middle">e5f</text><text class="t" x="310" y="90" text-anchor="middle" style="font-size:11.5px">色を修正</text></g>
+<circle class="fy" cx="240" cy="62" r="5" data-s="2"/>
+<g data-at="1:240,104|2:240,104|3:170,104|4:310,104"><path class="fp" d="M0 0l-7 10h14z"/><text class="tm tp tb mono" x="0" y="24" text-anchor="middle">HEAD</text></g>
+<g data-s="2"><rect class="s fc" x="12" y="136" width="198" height="48" rx="6"/><text class="t mono" x="22" y="155" style="font-size:12px;fill:var(--warn)">-  color: blue;</text><text class="t mono" x="22" y="174" style="font-size:12px;fill:var(--tip)">+  color: bule;</text><text class="tm" x="218" y="166">← つづりミス！</text></g>
+<text class="tm" x="12" y="164" data-s="3">過去の状態をそのまま見に行ける</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 4</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">履歴をたどる</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>コミットが4つ並んだ履歴（git log で見られる）</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>d4e のあとで表示が崩れた。git diff で、何がどう変わったかを1行単位で確認</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>原因を探すため、1つ前の c3d の状態を見に行く</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>原因がわかったので直して、新しいコミットとして記録する</span></button></li></ol>
+</div>
+<div class="code"><div class="code-h"><span>変更点を見る（git diff）</span></div><pre><code><span class="cm">$</span> git diff
+<span class="cm">--- a/style.css</span>
+<span class="cm">+++ b/style.css</span>
+<span class="del">-  color: blue;</span>
+<span class="add">+  color: bule;</span></code></pre></div>
+<p>赤い <code>-</code> の行が消えた内容、緑の <code>+</code> の行が加わった内容です。</p>
+<div class="tbl"><table><thead><tr><th>コマンド</th><th>できること</th></tr></thead><tbody><tr><td><code>git log --oneline</code></td><td>履歴を1行ずつ一覧で見る</td></tr><tr><td><code>git diff</code></td><td>まだコミットしていない変更点を見る</td></tr><tr><td><code>git show ID</code></td><td>あるコミットで何を変えたかを見る</td></tr><tr><td><code>git restore ファイル名</code></td><td>まだコミットしていない変更を取り消して、最後の記録の状態に戻す</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p><code>git restore</code> で取り消した変更は、記録されていないので元に戻せません。消してよいか、<code>git diff</code> で確認してから使いましょう。</p></div></aside>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><dfn>HEAD</dfn> は「いま見ている場所」を指す目印です。コミットの ID（<code>a1b2c3d</code> のような文字列）は、記録ごとに付く指紋のようなものです。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="6"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-7">次へ：GitHub と同期する：push と pull</a></div>
+</section><div class="part" id="part-3"><p>Part 3</p><h2>GitHub で共有する</h2><p class="part-d">記録をインターネットに置いて、仲間と共有・公開します。</p></div>
+<section class="step" id="step-7" data-step="7" aria-labelledby="h-7">
+  <p class="step-no">Step 7<span>/ 11</span></p>
+  <h2 id="h-7">GitHub と同期する：push と pull</h2>
+  
+<p>ここからは GitHub の出番です。手元の履歴を GitHub に置いておく場所のことを <dfn>リモートリポジトリ</dfn> と呼びます。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 230" role="img" aria-label="push、clone、pullでGitHubと手元の履歴を同期するアニメーション">
+<rect class="s fs" x="110" y="10" width="140" height="76" rx="10"/><text class="t tb" x="180" y="34" text-anchor="middle">GitHub</text>
+<use href="#i-pc" x="20" y="138" width="72" height="56"/><use href="#i-pc" x="268" y="138" width="72" height="56"/>
+<text class="t" x="56" y="210" text-anchor="middle">あなた</text><text class="t" x="304" y="210" text-anchor="middle">友達</text>
+<g class="s fc"><circle cx="36" cy="124" r="6" data-s="1-5"/><circle cx="52" cy="124" r="6" data-s="1-5"/><circle cx="68" cy="124" r="6" data-s="1-5"/></g><circle class="s fy" cx="84" cy="124" r="6" data-s="5"/>
+<g class="s fc"><circle cx="152" cy="62" r="6" data-s="2-5"/><circle cx="168" cy="62" r="6" data-s="2-5"/><circle cx="184" cy="62" r="6" data-s="2-5"/></g><circle class="s fy" cx="200" cy="62" r="6" data-s="4-5"/>
+<g class="s fc"><circle cx="284" cy="124" r="6" data-s="3-5"/><circle cx="300" cy="124" r="6" data-s="3-5"/><circle cx="316" cy="124" r="6" data-s="3-5"/></g><circle class="s fy" cx="332" cy="124" r="6" data-s="4-5"/>
+<g data-s="2"><path class="s sp" d="M70 110L132 90" marker-end="url(#arp)" style="stroke-width:2.6"/><text class="t mono tb tp" x="78" y="92">push</text></g>
+<g data-s="3"><path class="s sp" d="M228 90L290 110" marker-end="url(#arp)" style="stroke-width:2.6"/><text class="t mono tb tp" x="250" y="92">clone</text></g>
+<g data-s="4"><path class="s sp" d="M290 110L228 90" marker-end="url(#arp)" style="stroke-width:2.6"/><text class="t mono tb tp" x="252" y="92">push</text></g>
+<g data-s="5"><path class="s sp" d="M132 90L70 110" marker-end="url(#arp)" style="stroke-width:2.6"/><text class="t mono tb tp" x="84" y="92">pull</text></g>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">push と pull</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>あなたの PC に、コミットが3つある</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>git push で、履歴を GitHub にアップロードする</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>友達が git clone で、履歴ごと自分の PC にコピーする</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>友達が新しいコミット（黄色）を作り、git push する</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>あなたが git pull で、友達の変更を取り込む。全員の履歴がそろった</span></button></li></ol>
+</div>
+<div class="tbl stack"><table><thead><tr><th>コマンド</th><th>向き</th><th>意味</th></tr></thead><tbody><tr><td data-label="コマンド"><code>git push</code></td><td data-label="向き">PC → GitHub</td><td data-label="意味">自分のコミットをアップロードする</td></tr><tr><td data-label="コマンド"><code>git pull</code></td><td data-label="向き">GitHub → PC</td><td data-label="意味">ほかの人の変更を取り込む</td></tr><tr><td data-label="コマンド"><code>git clone URL</code></td><td data-label="向き">GitHub → PC</td><td data-label="意味">リポジトリを履歴ごとまるごとコピーする（最初の1回）</td></tr></tbody></table></div>
+<div class="code"><div class="code-h"><span>はじめて GitHub に push するとき</span></div><pre><code><span class="cm">$</span> git branch -M main
+<span class="cm">$</span> git remote add origin https://github.com/ユーザー名/my-site.git
+<span class="cm">$</span> git push -u origin main</code></pre></div>
+<aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p><code>origin</code> は「GitHub 上のリポジトリ」につけたあだ名です。2回目からは <code>git push</code> だけで送れます。</p></div></aside>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>作業を始める前に <code>git pull</code>、終わったら <code>git push</code>。これを習慣にすると、仲間との食い違いが起きにくくなります。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">GitHub にある最新の変更を、自分の PC に取り込むコマンドは？</p><div class="opts"><button class="opt" type="button">git push</button><button class="opt" type="button">git pull</button><button class="opt" type="button">git commit</button></div><p class="fb">pull は「引っ張ってくる」。push は「押し出す」です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="7"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-8">次へ：ブランチで安全に試す</a></div>
+</section>
+<section class="step" id="step-8" data-step="8" aria-labelledby="h-8">
+  <p class="step-no">Step 8<span>/ 11</span></p>
+  <h2 id="h-8">ブランチで安全に試す</h2>
+  
+<p><dfn>ブランチ</dfn>（枝）は、本体の流れを残したまま、別の作業をするための仕組みです。新しい機能を試すときは、枝を作ってその上で作業します。</p>
+<div class="player" data-player>
+  <div class="stage"><svg viewBox="0 0 360 170" role="img" aria-label="ブランチを作って作業し、mainに合流させるアニメーション">
+<text class="t tb mono" x="10" y="138">main</text>
+<path class="s sl" d="M30 112H340" style="stroke-width:3"/>
+<g class="s fc"><circle cx="40" cy="112" r="8"/><circle cx="96" cy="112" r="8"/></g>
+<g data-s="2-5"><path class="s sp" d="M96 112C120 112 120 52 150 52H232" style="stroke-width:3"/><text class="t tb mono tp" x="150" y="34">feature</text></g>
+<g class="s sp fc" style="stroke-width:2.4"><circle cx="164" cy="52" r="8" data-s="3-5"/><circle cx="224" cy="52" r="8" data-s="3-5"/></g>
+<circle class="s fc" cx="196" cy="112" r="8" data-s="4-5"/><text class="tm" x="196" y="140" text-anchor="middle" data-s="4-5">main 側の修正</text>
+<g data-s="5"><path class="s sp" d="M232 52C262 52 262 112 290 112" style="stroke-width:3"/><circle class="s fy" cx="296" cy="112" r="11"/><text class="t tb tp" x="296" y="148" text-anchor="middle">マージ</text></g>
+<text class="tm" x="352" y="86" text-anchor="end" data-s="3" style="font-size:11px">ここで何を試しても main は無事</text>
+</svg></div>
+  <div class="pctrl"><button class="pbtn" type="button" data-prev aria-label="前の場面">戻る</button><span class="pcnt">1 / 5</span><button class="pbtn" type="button" data-next aria-label="次の場面">次へ</button><button class="pbtn play" type="button" data-play>自動再生</button><span class="plabel">ブランチ</span></div>
+  <ol class="frames"><li><button type="button" data-go="1"><span class="fn">1</span><span>main という基本の流れがある</span></button></li><li><button type="button" data-go="2"><span class="fn">2</span><span>git switch -c feature で枝分かれ（ブランチ）を作る</span></button></li><li><button type="button" data-go="3"><span class="fn">3</span><span>枝の上で、新しい機能を自由に試してコミットする</span></button></li><li><button type="button" data-go="4"><span class="fn">4</span><span>そのあいだも、main では別の修正が進められる</span></button></li><li><button type="button" data-go="5"><span class="fn">5</span><span>うまくいったら、枝を main に合流させる（マージ）</span></button></li></ol>
+</div>
+<div class="code"><div class="code-h"><span>ブランチの基本操作</span></div><pre><code><span class="cm">$</span> git switch -c feature   <span class="cm"># 枝を作って移動する</span>
+<span class="cm">$</span> git branch              <span class="cm"># 枝の一覧（* がいまいる枝）</span>
+<span class="cm">$</span> git switch main         <span class="cm"># main に戻る</span>
+<span class="cm">$</span> git merge feature       <span class="cm"># feature の変更を main に取り込む</span></code></pre></div>
+<aside class="callout analogy"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>たとえると</p><div><p>レポートの下書き用のコピーです。下書きで思い切って書き直しても、提出用の原本は無事。良くなったら原本に反映します。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="8"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-9">次へ：プルリクエストとコンフリクト</a></div>
+</section>
+<section class="step" id="step-9" data-step="9" aria-labelledby="h-9">
+  <p class="step-no">Step 9<span>/ 11</span></p>
+  <h2 id="h-9">プルリクエストとコンフリクト</h2>
+  
+<p>チームで開発するときは、自分で直接 main にマージせず、<dfn>プルリクエスト</dfn>（PR）を作って確認をお願いします。「このブランチの変更を main に入れてもいいですか？」という依頼です。</p>
+<ol class="list">
+  <li>ブランチで作業してコミットし、GitHub に push する</li>
+  <li>GitHub の画面で「Pull request」を作る</li>
+  <li>仲間が変更点を見て、コメントや修正の提案をする（レビュー）</li>
+  <li>問題がなければ、GitHub 上で「Merge」ボタンを押す</li>
+</ol>
+<p>2人が<strong>同じファイルの同じ行</strong>を別々に変えると、Git はどちらを残すか決められません。これを <dfn>コンフリクト</dfn>（衝突）といい、ファイルに次のような印が入ります。</p>
+<div class="code"><div class="code-h"><span>コンフリクトしたファイル</span></div><pre><code><span class="hl">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+&lt;h1&gt;プレゼミへようこそ&lt;/h1&gt;
+<span class="hl">=======</span>
+&lt;h1&gt;プレゼミの資料置き場&lt;/h1&gt;
+<span class="hl">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</span></code></pre></div>
+<p>上が自分の変更、下が取り込もうとした変更です。残したい内容に書き換えて印の行を消し、<code>git add</code> と <code>git commit</code> をすれば解決です。</p>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p>コンフリクトは失敗ではなく、「人が判断してね」という Git からの合図です。こまめに pull し、同じ場所を同時に触らないよう声をかけ合うと減らせます。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">2人が同じ行を別々に書き換えて、まとめようとしたときに起きるのは？</p><div class="opts"><button class="opt" type="button">コミット</button><button class="opt" type="button">コンフリクト</button><button class="opt" type="button">クローン</button></div><p class="fb">どちらを残すか、人が選んで解決します。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="9"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-10">次へ：公開してはいけないものを守る</a></div>
+</section>
+<section class="step" id="step-10" data-step="10" aria-labelledby="h-10">
+  <p class="step-no">Step 10<span>/ 11</span></p>
+  <h2 id="h-10">公開してはいけないものを守る</h2>
+  
+<p>GitHub のリポジトリには <dfn>公開（Public）</dfn> と <dfn>非公開（Private）</dfn> があります。公開リポジトリは、世界中の誰でも中身と履歴をすべて見られます。</p>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>パスワード、API キー、個人情報、アンケートの生データなどは、絶対にコミットしないでください。<strong>あとからファイルを消しても、過去のコミットの中に残り続けます。</strong>公開リポジトリでは、自動で鍵を探して悪用するプログラムも動いています。</p></div></aside>
+<p>記録したくないファイルは、<code>.gitignore</code> というファイルに名前を書いておくと、Git が無視してくれます。</p>
+<div class="code"><div class="code-h"><span>.gitignore の例</span></div><pre><code><span class="cm"># 秘密の設定（パスワードやキー）</span>
+.env
+*.key
+
+<span class="cm"># 自動で作られるファイル</span>
+node_modules/
+__pycache__/
+.DS_Store</code></pre></div>
+<div class="tbl"><table><thead><tr><th>うっかりしたとき</th><th>やること</th></tr></thead><tbody><tr><td>まだ push していない</td><td>そのコミットをやり直す（先輩や先生に相談）</td></tr><tr><td>もう push してしまった</td><td>ファイルを消すだけでは不十分。そのパスワードやキーを<strong>すぐに無効化して作り直す</strong></td></tr></tbody></table></div>
+<aside class="callout tip"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>ポイント</p><div><p><code>git add .</code> の前に <code>git status</code> で、何を記録しようとしているか必ず確認しましょう。第1回で学んだ「HTTPS で通信を守る」のと同じで、仕組みを知っていれば防げる事故です。</p></div></aside>
+<div class="check" data-answer="1"><p class="check-h">理解度チェック</p><p class="check-q">パスワードを書いたファイルを公開リポジトリに push してしまった。最初にすべきことは？</p><div class="opts"><button class="opt" type="button">ファイルを削除してもう一度 push する</button><button class="opt" type="button">そのパスワードを無効化して変更する</button><button class="opt" type="button">リポジトリ名を変える</button></div><p class="fb">履歴に残っているので、パスワード自体を使えなくするのが最優先です。</p></div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="10"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#step-11">次へ：GitHub Pages で公開する</a></div>
+</section>
+<section class="step" id="step-11" data-step="11" aria-labelledby="h-11">
+  <p class="step-no">Step 11<span>/ 11</span></p>
+  <h2 id="h-11">GitHub Pages で公開する</h2>
+  
+<p>GitHub には、リポジトリの HTML・CSS をそのまま Web サイトとして公開できる <dfn>GitHub Pages</dfn> という機能があります。第1回で学んだ<a href="01-web.html">静的なページ</a>を、無料で置いておける場所です。</p>
+<ol class="list">
+  <li>リポジトリに <code>index.html</code> を置いて push する</li>
+  <li>GitHub のリポジトリ画面で「Settings」→「Pages」を開く</li>
+  <li>「Branch」で <code>main</code> と <code>/ (root)</code> を選んで「Save」</li>
+  <li>しばらくすると、次の URL でページが見られる</li>
+</ol>
+<div class="code"><div class="code-h"><span>公開される URL</span></div><pre><code>https://ユーザー名.github.io/リポジトリ名/</code></pre></div>
+<p>以後は、ファイルを直して commit・push するたびに、サイトが自動で更新されます。<strong>Git で記録して、GitHub で公開する</strong>。この流れが、このレッスンのゴールです。</p>
+<aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>GitHub Pages のサイトは、誰でも見られる公開ページになります。前の段階と同じく、個人情報や秘密の情報は載せないようにしましょう。</p></div></aside>
+
+  <div class="step-foot"><button class="done" type="button" data-step="11"><span class="box" aria-hidden="true"></span><span class="lbl">読み終えたらチェック</span></button><a class="next" href="#exercise">次へ：演習</a></div>
+</section>
+    
+<section class="ex-sec" id="exercise" data-step="12" aria-labelledby="h-ex">
+  <p class="step-no">Exercise</p>
+  <h2 id="h-ex">演習：自己紹介ページを Git で作って公開する</h2>
+  <p>4つの演習を順番に進めると、最後に自分のページが Web に公開されます。</p>
+
+  <div class="exercise" id="ex-1">
+    <div class="ex-h"><span class="ex-tag">演習 1</span><h3>Git を準備する</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>Git が使える状態にして、名前とメールを設定する</dd></div><div><dt>使うもの</dt><dd>ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 5</dd></div></dl>
+    <div class="code"><div class="code-h"><span>入っているか確認</span><button class="copy" type="button" data-copy="git --version">コピー</button></div><pre><code>git --version</code></pre></div>
+    <p>バージョン番号が表示されれば準備完了です。表示されない場合は、Windows は git-scm.com から、Mac は表示される案内に従ってインストールします。そのあと Step 5 の <code>git config</code> を実行します。</p>
+  </div>
+
+  <div class="exercise" id="ex-2">
+    <div class="ex-h"><span class="ex-tag">演習 2</span><h3>3回コミットしてみる</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>自己紹介ページを作りながら、履歴を3つ残す</dd></div><div><dt>使うもの</dt><dd>ターミナル、テキストエディター</dd></div><div><dt>関係する段階</dt><dd>Step 4〜6</dd></div></dl>
+    <div class="code"><div class="code-h"><span>フォルダを作って Git を始める</span><button class="copy" type="button" data-copy="cd ~/presemi/git
+mkdir my-site
+cd my-site
+git init">コピー</button></div><pre><code>cd ~/presemi/git
+mkdir my-site
+cd my-site
+git init</code></pre></div>
+    <ol class="steps">
+      <li><code>index.html</code> を作り、名前だけ書いて add・commit する</li>
+      <li>趣味を1行追加して add・commit する</li>
+      <li>好きな色で見出しの色を変えて add・commit する</li>
+      <li><code>git log --oneline</code> で、3つの記録が並んでいるか確かめる</li>
+    </ol>
+    <div class="code"><div class="code-h"><span>index.html のひな形</span></div><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;&lt;meta charset="utf-8"&gt;&lt;title&gt;自己紹介&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;はじめまして&lt;/h1&gt;
+  &lt;p&gt;名前：&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <details><summary>ヒント</summary><p>変更のたびに <code>git status</code> と <code>git diff</code> を実行して、Git が何を見ているかを確かめてみましょう。</p></details>
+  </div>
+
+  <div class="exercise" id="ex-3">
+    <div class="ex-h"><span class="ex-tag">演習 3</span><h3>GitHub に push する</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>手元の履歴を GitHub に置く</dd></div><div><dt>使うもの</dt><dd>GitHub アカウント、ターミナル</dd></div><div><dt>関係する段階</dt><dd>Step 7</dd></div></dl>
+    <ol class="steps">
+      <li>GitHub で右上の「+」→「New repository」から、<code>my-site</code> という名前で公開（Public）リポジトリを作る</li>
+      <li>表示された URL を使って、Step 7 のコマンドで push する</li>
+      <li>GitHub の画面を再読み込みして、ファイルとコミットの数を確かめる</li>
+    </ol>
+    <aside class="callout note"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5M10 6.2v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>補足</p><div><p>push のときにログインを求められたら、表示される案内に従ってブラウザで認証します。パスワードを直接打つ方式は使えないので、うまくいかないときは GitHub CLI の <code>gh auth login</code> を使うと簡単です。</p></div></aside>
+  </div>
+
+  <div class="exercise" id="ex-4">
+    <div class="ex-h"><span class="ex-tag">演習 4</span><h3>GitHub Pages で公開する</h3></div>
+    <dl class="ex-meta"><div><dt>目標</dt><dd>自己紹介ページを、URL で誰でも見られるようにする</dd></div><div><dt>使うもの</dt><dd>GitHub</dd></div><div><dt>関係する段階</dt><dd>Step 10・11</dd></div></dl>
+    <ol class="steps">
+      <li>Step 11 の手順で GitHub Pages を有効にする</li>
+      <li>公開された URL をスマホで開いてみる</li>
+      <li>ページを少し直して commit・push し、数分後にスマホで再読み込みして反映を確かめる</li>
+    </ol>
+    <aside class="callout warn"><p class="c-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l8 14H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 14.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>注意</p><div><p>公開ページになります。本名・学籍番号・連絡先など、載せる情報は自分で選んでください。</p></div></aside>
+  </div>
+
+  <div class="step-foot"><button class="done" type="button" data-step="12"><span class="box" aria-hidden="true"></span><span class="lbl">演習を終えたらチェック</span></button><a class="next" href="#summary">次へ：まとめ</a></div>
+</section>
+
+<section class="ex-sec" id="summary" aria-labelledby="h-sum">
+  <p class="step-no">Summary</p>
+  <h2 id="h-sum">まとめ：用語の早見表</h2>
+  <div class="tbl stack"><table><thead><tr><th>用語</th><th>ひとことで</th><th>段階</th></tr></thead><tbody><tr><td data-label="用語">バージョン管理</td><td data-label="ひとことで">変更の「いつ・誰が・何を・なぜ」を記録し、戻れるようにすること</td><td data-label="段階"><a href="#step-1">1</a></td></tr><tr><td data-label="用語">Git</td><td data-label="ひとことで">バージョン管理ツール（PC の中で動く道具）</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">GitHub</td><td data-label="ひとことで">Git の履歴を置いて共有する Web サービス</td><td data-label="段階"><a href="#step-3">3</a></td></tr><tr><td data-label="用語">リポジトリ</td><td data-label="ひとことで">記録がたまっていく保管庫</td><td data-label="段階"><a href="#step-4">4</a></td></tr><tr><td data-label="用語">ステージ / add</td><td data-label="ひとことで">次に記録するものを並べる台 / 並べる操作</td><td data-label="段階"><a href="#step-4">4</a></td></tr><tr><td data-label="用語">コミット</td><td data-label="ひとことで">変更の記録（セーブポイント）</td><td data-label="段階"><a href="#step-5">5</a></td></tr><tr><td data-label="用語">HEAD</td><td data-label="ひとことで">いま見ている場所の目印</td><td data-label="段階"><a href="#step-6">6</a></td></tr><tr><td data-label="用語">push / pull / clone</td><td data-label="ひとことで">送る / 取り込む / まるごとコピー</td><td data-label="段階"><a href="#step-7">7</a></td></tr><tr><td data-label="用語">ブランチ / マージ</td><td data-label="ひとことで">作業用の枝 / 枝を合流させる</td><td data-label="段階"><a href="#step-8">8</a></td></tr><tr><td data-label="用語">プルリクエスト</td><td data-label="ひとことで">マージ前に確認をお願いする仕組み</td><td data-label="段階"><a href="#step-9">9</a></td></tr><tr><td data-label="用語">コンフリクト</td><td data-label="ひとことで">同じ行の変更がぶつかった状態</td><td data-label="段階"><a href="#step-9">9</a></td></tr><tr><td data-label="用語">.gitignore</td><td data-label="ひとことで">記録しないファイルの一覧</td><td data-label="段階"><a href="#step-10">10</a></td></tr><tr><td data-label="用語">GitHub Pages</td><td data-label="ひとことで">リポジトリをそのまま Web 公開する機能</td><td data-label="段階"><a href="#step-11">11</a></td></tr></tbody></table></div>
+  <nav class="pager" aria-label="レッスンの移動">
+    <a class="pg" href="01-web.html"><small>前のレッスン</small>第1回 Webのしくみ</a>
+    <a class="pg next-l" href="03-python.html" style="text-decoration:none;color:var(--text)"><small>次のレッスン</small>第3回 Python で Web サイトを作る</a>
+  </nav>
+</section>
+
+  </article>
+
+  <aside class="toc" aria-label="このページの内容">
+    <p>このページの内容</p>
+    <ul><li><a href="#overview" data-toc="overview">全体の流れ</a></li><li><a href="#step-1" data-toc="step-1">バージョン管理とは</a></li><li><a href="#step-2" data-toc="step-2">利点と欠点</a></li><li><a href="#step-3" data-toc="step-3">Git と GitHub</a></li><li><a href="#step-4" data-toc="step-4">3つの場所</a></li><li><a href="#step-5" data-toc="step-5">はじめてのコミット</a></li><li><a href="#step-6" data-toc="step-6">履歴と過去に戻る</a></li><li><a href="#step-7" data-toc="step-7">push と pull</a></li><li><a href="#step-8" data-toc="step-8">ブランチ</a></li><li><a href="#step-9" data-toc="step-9">PR とコンフリクト</a></li><li><a href="#step-10" data-toc="step-10">秘密を守る</a></li><li><a href="#step-11" data-toc="step-11">GitHub Pages</a></li><li><a href="#exercise" data-toc="exercise">演習</a></li><li><a href="#summary" data-toc="summary">まとめ</a></li></ul>
+  </aside>
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 段階アニメーション */
+  function inS(spec,k){return spec.split(",").some(function(r){var a=r.split("-").map(Number);return a.length>1?(k>=a[0]&&k<=a[1]):k===a[0]})}
+  document.querySelectorAll("[data-player]").forEach(function(p){
+    var frames=[].slice.call(p.querySelectorAll(".frames li")),N=frames.length,k=1,timer=null;
+    var vis=[].slice.call(p.querySelectorAll("[data-s]")),mov=[].slice.call(p.querySelectorAll("[data-at]"));
+    var pos=mov.map(function(e){var m={};e.dataset.at.split("|").forEach(function(x){var q=x.split(":");m[+q[0]]=q[1].split(",").map(Number)});return m});
+    var cnt=p.querySelector(".pcnt"),prev=p.querySelector("[data-prev]"),next=p.querySelector("[data-next]"),play=p.querySelector("[data-play]");
+    function show(n){k=n;
+      vis.forEach(function(e){e.classList.toggle("off",!inS(e.dataset.s,k))});
+      mov.forEach(function(e,i){var best=null;for(var f in pos[i])if(+f<=k&&(best===null||+f>best))best=+f;if(best===null)best=Math.min.apply(null,Object.keys(pos[i]).map(Number));var xy=pos[i][best];e.style.transform="translate("+xy[0]+"px,"+xy[1]+"px)"});
+      frames.forEach(function(li,i){li.classList.toggle("cur",i===k-1);li.classList.toggle("past",i<k-1)});
+      cnt.textContent=k+" / "+N;prev.disabled=k===1;next.disabled=k===N;
+    }
+    function stop(){if(timer){clearInterval(timer);timer=null;play.textContent="自動再生"}}
+    prev.addEventListener("click",function(){stop();if(k>1)show(k-1)});
+    next.addEventListener("click",function(){stop();if(k<N)show(k+1)});
+    frames.forEach(function(li,i){li.querySelector("button").addEventListener("click",function(){stop();show(i+1)})});
+    play.addEventListener("click",function(){
+      if(timer){stop();return}
+      if(k===N)show(1);play.textContent="停止";
+      timer=setInterval(function(){if(k<N)show(k+1);else stop()},reduce?1400:2000);
+    });
+    show(1);requestAnimationFrame(function(){p.classList.add("ready")});
+  });
+
+  /* コピー */
+  document.querySelectorAll(".copy").forEach(function(b){b.addEventListener("click",function(){
+    var done=function(){b.textContent="コピーしました";b.classList.add("ok");setTimeout(function(){b.textContent="コピー";b.classList.remove("ok")},1600)};
+    try{navigator.clipboard.writeText(b.dataset.copy).then(done,function(){b.textContent="手動でコピーしてください"})}catch(e){b.textContent="手動でコピーしてください"}
+  })});
+
+  /* 理解度チェック */
+  document.querySelectorAll(".check").forEach(function(q){
+    var ans=+q.dataset.answer,opts=[].slice.call(q.querySelectorAll(".opt")),fb=q.querySelector(".fb"),base=fb.textContent;
+    opts.forEach(function(o,i){o.addEventListener("click",function(){
+      opts.forEach(function(x){x.classList.remove("right","wrong")});
+      if(i===ans){o.classList.add("right");fb.innerHTML="<b>正解</b>"+base}else{o.classList.add("wrong");fb.innerHTML="<b>もう一度考えてみよう</b>ヒント：この段階の図を見直してみましょう。"}
+      fb.classList.add("show");
+    })});
+  });
+
+  /* 進捗（この端末のブラウザにだけ保存） */
+  var KEY="presemi-git-progress",TOTAL=12,state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function render(){
+    var n=0;for(var i=1;i<=TOTAL;i++)if(state[i])n++;
+    document.querySelectorAll(".pcount").forEach(function(e){e.textContent=n+" / "+TOTAL});
+    document.querySelectorAll(".pbar").forEach(function(e){e.style.width=(n/TOTAL*100)+"%"});
+    document.querySelectorAll("button.done").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.querySelector(".lbl").textContent=on?"完了（もう一度押すと取り消し）":(b.dataset.step==="12"?"演習を終えたらチェック":"読み終えたらチェック")});
+    document.querySelectorAll("button.mark-btn").forEach(function(b){var on=!!state[b.dataset.step];b.setAttribute("aria-pressed",on);b.setAttribute("aria-label",(on?"完了を取り消す：":"完了にする：")+b.dataset.title)});
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("is-done",!!state[a.dataset.nav])});
+  }
+  function toggle(k){state[k]=!state[k];save();render()}
+  /* 目次の丸を、押してチェック・解除できるボタンにする */
+  document.querySelectorAll(".nav a[data-nav]").forEach(function(a){
+    var m=a.querySelector(".mark"),k=a.dataset.nav;if(m)m.remove();
+    if(k==="0"){var sp=document.createElement("span");sp.className="mark-sp";a.parentNode.insertBefore(sp,a);return}
+    var b=document.createElement("button");b.type="button";b.className="mark-btn";b.dataset.step=k;b.dataset.title=a.textContent.trim();
+    b.addEventListener("click",function(){toggle(k)});a.parentNode.insertBefore(b,a);
+  });
+  document.querySelectorAll("button.done").forEach(function(b){b.addEventListener("click",function(){toggle(b.dataset.step)})});
+  /* すべて外す（スマホの目次にも置く。押し間違い防止に2回押しで実行） */
+  var r0=document.querySelector(".reset"),mn=document.querySelector(".m-nav");
+  if(r0&&mn)mn.appendChild(r0.cloneNode(true));
+  document.querySelectorAll(".reset").forEach(function(r){var t=null,base=r.textContent;r.addEventListener("click",function(){
+    if(t){clearTimeout(t);t=null;state={};save();render();r.textContent="すべて外しました";setTimeout(function(){r.textContent=base},1500);return}
+    r.textContent="もう一度押すと、すべて外れます";t=setTimeout(function(){t=null;r.textContent=base},3000)})});
+  render();
+
+  /* 読んでいる位置 */
+  var secs=[].slice.call(document.querySelectorAll("#overview,.step,#exercise,#summary"));
+  var hdbar=document.getElementById("hdbar");
+  function onScroll(){
+    var y=scrollY+120,cur=secs[0];secs.forEach(function(s){if(s.offsetTop<=y)cur=s});
+    document.querySelectorAll("[data-toc]").forEach(function(a){a.classList.toggle("cur",a.dataset.toc===cur.id)});
+    var key=cur.dataset.step||(cur.id==="overview"?"0":"");
+    document.querySelectorAll("[data-nav]").forEach(function(a){a.classList.toggle("cur",a.dataset.nav===key)});
+    var h=document.documentElement.scrollHeight-innerHeight;hdbar.style.width=(h>0?scrollY/h*100:0)+"%";
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+</script>
+<script>/* 今のページをメニューの見える位置へ */(function(){var c=document.querySelector(".course [aria-current]");if(c){var n=c.parentNode;n.scrollLeft=Math.max(0,c.offsetLeft-n.clientWidth/2+c.offsetWidth/2)}})();</script>
+</body>
+</html>
